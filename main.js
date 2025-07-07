@@ -22,26 +22,39 @@ class VideoEditor {
       this.composition = new core.Composition()
       console.log('✅ Composition created')
 
-      // Load sources from public directory
-      console.log('📂 Loading video source...')
-      const videoSource = await core.Source.from('/jim_mcgrew (720p).mp4')
-      console.log('✅ Video source loaded:', videoSource)
+      // Load video sources from public directory
+      console.log('📂 Loading video sources...')
+      const videoSource1 = await core.Source.from('/jim_mcgrew (720p).mp4')
+      console.log('✅ First video source loaded:', videoSource1)
+      
+      const videoSource2 = await core.Source.from('/Vaibhav.mp4')
+      console.log('✅ Second video source loaded:', videoSource2)
       
       console.log('🎵 Loading audio source...')
       const audioSource = await core.Source.from('/future-design-344320.mp3')
       console.log('✅ Audio source loaded:', audioSource)
 
-      // Get duration from video source
-      this.duration = videoSource.duration?.seconds ?? 10
-      this.composition.duration = videoSource.duration
-      console.log(`⏱️ Duration set: ${this.duration}s`)
+      // Calculate total duration from both videos
+      const video1Duration = videoSource1.duration?.seconds ?? 10
+      const video2Duration = videoSource2.duration?.seconds ?? 10
+      this.duration = video1Duration + video2Duration
+      
+      // The composition duration will be automatically set by the sequential layer
+      // when we add the clips, so we don't need to set it manually
+      console.log(`⏱️ Total duration calculated: ${this.duration}s (Video 1: ${video1Duration}s + Video 2: ${video2Duration}s)`)
 
-      // Create video clip with source
-      const videoClip = new core.VideoClip(videoSource, {
+      // Create video clips
+      const videoClip1 = new core.VideoClip(videoSource1, {
         height: '100%',
         position: 'center'
       })
-      console.log('📹 Video clip created')
+      console.log('📹 First video clip created')
+
+      const videoClip2 = new core.VideoClip(videoSource2, {
+        height: '100%',
+        position: 'center'
+      })
+      console.log('📹 Second video clip created')
 
       // Create audio clip with source (reduced volume)
       const audioClip = new core.AudioClip(audioSource, {
@@ -49,7 +62,7 @@ class VideoEditor {
       })
       console.log('🔊 Audio clip created with reduced volume')
 
-      // Add title text overlay
+      // Add title text overlay for the entire duration
       const title = new core.TextClip({
         text: 'Diffusion Studio',
         fontSize: 64,
@@ -60,17 +73,25 @@ class VideoEditor {
       })
       console.log('📝 Text clip created')
 
-      // Create layers and add clips
+      // Create layers
       const videoLayer = this.composition.createLayer()
       const audioLayer = this.composition.createLayer()
       const textLayer = this.composition.createLayer()
       console.log('🎛️ Layers created')
 
-      // Add clips to their respective layers
-      await videoLayer.add(videoClip)  // Background video
+      // Enable sequential mode on video layer for automatic sequencing
+      videoLayer.sequential()
+      console.log('🔄 Sequential mode enabled on video layer')
+
+      // Add video clips to video layer (they will play sequentially)
+      await videoLayer.add(videoClip1)  // First video
+      await videoLayer.add(videoClip2)  // Second video (will start after first ends)
+      console.log('✅ Both video clips added to sequential layer')
+
+      // Add other clips to their respective layers
       await audioLayer.add(audioClip)  // Audio track
       await textLayer.add(title)       // Text overlay on top
-      console.log('✅ Clips added to layers')
+      console.log('✅ Audio and text clips added to layers')
 
       // Mount composition to player (like working example)
       const player = document.getElementById('player')
@@ -84,7 +105,7 @@ class VideoEditor {
       this.updateTimeDisplay()
       this.updateTimeline()
       
-      console.log(`🎉 Composition fully loaded: ${this.duration}s duration`)
+      console.log(`🎉 Sequential composition loaded: ${this.duration}s total duration`)
       
     } catch (error) {
       console.error('❌ Error initializing composition:', error)
