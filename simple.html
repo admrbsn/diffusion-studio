@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Diffusion Studio Example</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        button {
+            background: #4338ca;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 0;
+        }
+        
+        button:hover {
+            background: #3730a3;
+        }
+        
+        #status {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8fafc;
+            border-radius: 6px;
+            border-left: 4px solid #4338ca;
+        }
+        
+        .success {
+            background: #f0fdf4;
+            border-left-color: #22c55e;
+        }
+        
+        .error {
+            background: #fef2f2;
+            border-left-color: #ef4444;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Simple Diffusion Studio Example</h1>
+        <p>This demonstrates the most basic video creation with Diffusion Studio Core.</p>
+        
+        <h2>What this creates:</h2>
+        <ul>
+            <li>5-second video (1280x720)</li>
+            <li>Blue background</li>
+            <li>White text: "Hello, Diffusion Studio!"</li>
+            <li>Output: simple-video.mp4</li>
+        </ul>
+        
+        <button onclick="createVideo()">Create Simple Video</button>
+        
+        <div id="status">Ready to create video...</div>
+    </div>
+
+    <script type="module">
+        import * as core from '@diffusionstudio/core'
+        
+        window.createVideo = async function() {
+            const status = document.getElementById('status')
+            
+            try {
+                status.textContent = 'Creating video...'
+                status.className = ''
+                
+                // Create a 5-second video composition
+                const composition = new core.Composition({
+                    width: 1280,
+                    height: 720,
+                    fps: 30,
+                    duration: 5
+                })
+
+                // Add a colored background
+                const background = new core.RectangleClip({
+                    width: 1280,
+                    height: 720,
+                    fill: { color: '#4338ca' },
+                    duration: 5
+                })
+
+                // Add a simple text clip
+                const text = new core.TextClip({
+                    text: 'Hello, Diffusion Studio!',
+                    fontSize: 48,
+                    fill: { color: '#ffffff' },
+                    position: 'center',
+                    duration: 5
+                })
+
+                // Add clips to composition
+                await composition.add(background)
+                await composition.add(text)
+
+                status.textContent = 'Rendering video...'
+                
+                // Render the video
+                await new core.Encoder(composition).render('simple-video.mp4')
+                
+                status.textContent = '✅ Success! Check your downloads for simple-video.mp4'
+                status.className = 'success'
+                
+            } catch (error) {
+                console.error('Error creating video:', error)
+                status.textContent = `❌ Error: ${error.message}`
+                status.className = 'error'
+            }
+        }
+    </script>
+</body>
+</html> 
