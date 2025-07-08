@@ -22,43 +22,64 @@ class VideoEditor {
       this.composition = new core.Composition()
       console.log('✅ Composition created')
 
-      // Load video sources from public directory and URL
+      // Define media sources in arrays (easier to transition to JSON later)
+      const videoSources = [
+        '/jim_mcgrew (720p).mp4',
+        '/Vaibhav.mp4',
+        'https://player.vimeo.com/progressive_redirect/playback/1098560016/rendition/720p/file.mp4?loc=external&signature=27531e28a53029453965f9a407132eb22d10e2325b9ffb7490ddf8dabc6a0212'
+      ]
+      
+      const imageSources = [
+        'https://images.pexels.com/photos/32440659/pexels-photo-32440659.jpeg'
+      ]
+      
+      const audioSources = [
+        '/future-design-344320.mp3',
+        '/embrace-364091.mp3'
+      ]
+      
+      // Load all video sources
       console.log('📂 Loading video sources...')
-      const videoSource1 = await core.Source.from('/jim_mcgrew (720p).mp4')
-      console.log('✅ First video source loaded:', videoSource1)
+      const loadedVideoSources = []
+      for (let i = 0; i < videoSources.length; i++) {
+        const videoSource = await core.Source.from(videoSources[i])
+        loadedVideoSources.push(videoSource)
+        console.log(`✅ Video ${i + 1} source loaded:`, videoSource)
+      }
       
-      const videoSource2 = await core.Source.from('/Vaibhav.mp4')
-      console.log('✅ Second video source loaded:', videoSource2)
+      // Load all image sources
+      console.log('🖼️ Loading image sources...')
+      const loadedImageSources = []
+      for (let i = 0; i < imageSources.length; i++) {
+        const imageSource = await core.Source.from(imageSources[i])
+        loadedImageSources.push(imageSource)
+        console.log(`✅ Image ${i + 1} source loaded:`, imageSource)
+      }
       
-      console.log('🌐 Loading third video from Vimeo URL...')
-      const videoSource3 = await core.Source.from('https://player.vimeo.com/progressive_redirect/playback/1098560016/rendition/720p/file.mp4?loc=external&signature=27531e28a53029453965f9a407132eb22d10e2325b9ffb7490ddf8dabc6a0212')
-      console.log('✅ Third video source loaded from Vimeo URL:', videoSource3)
+      // Load all audio sources
+      console.log('🎵 Loading audio sources...')
+      const loadedAudioSources = []
+      for (let i = 0; i < audioSources.length; i++) {
+        const audioSource = await core.Source.from(audioSources[i])
+        loadedAudioSources.push(audioSource)
+        console.log(`✅ Audio ${i + 1} source loaded:`, audioSource)
+      }
       
-      console.log('🖼️ Loading image source...')
-      const imageSource = await core.Source.from('https://images.pexels.com/photos/32440659/pexels-photo-32440659.jpeg')
-      console.log('✅ Image source loaded:', imageSource)
-      
-      console.log('🎵 Loading audio source...')
-      const audioSource = await core.Source.from('/future-design-344320.mp3')
-      console.log('✅ Audio source loaded:', audioSource)
-      
-      console.log('🎵 Loading second audio source...')
-      const audioSource2 = await core.Source.from('/embrace-364091.mp3')
-      console.log('✅ Second audio source loaded:', audioSource2)
-
-      // Calculate total duration from all three videos plus image
-      const video1Duration = videoSource1.duration?.seconds ?? 10
-      const video2Duration = videoSource2.duration?.seconds ?? 10
-      const video3Duration = videoSource3.duration?.seconds ?? 10
-      const imageDuration = 5  // 5 seconds for the image
-      this.duration = video1Duration + video2Duration + imageDuration + video3Duration
+      // Calculate total duration dynamically from all loaded sources
+      const videoDurations = loadedVideoSources.map(source => source.duration?.seconds ?? 10)
+      const imageDurations = [5] // 5 seconds for the image (could be from source later)
+      const totalVideoDuration = videoDurations.reduce((sum, duration) => sum + duration, 0)
+      const totalImageDuration = imageDurations.reduce((sum, duration) => sum + duration, 0)
+      this.duration = totalVideoDuration + totalImageDuration
       
       // DEBUGGING: Log all duration calculations
       console.log('🔍 DEBUGGING DURATIONS:')
-      console.log(`  Video 1 duration: ${video1Duration}s`)
-      console.log(`  Image duration: ${imageDuration}s`) 
-      console.log(`  Video 2 duration: ${video2Duration}s`)
-      console.log(`  Video 3 duration: ${video3Duration}s`)
+      videoDurations.forEach((duration, index) => {
+        console.log(`  Video ${index + 1} duration: ${duration}s`)
+      })
+      imageDurations.forEach((duration, index) => {
+        console.log(`  Image ${index + 1} duration: ${duration}s`)
+      })
       console.log(`  TOTAL calculated duration: ${this.duration}s`)
       
       // Set composition duration manually since we're not using sequential mode
@@ -66,128 +87,146 @@ class VideoEditor {
       const totalFrames = this.duration * fps
       this.composition.duration = totalFrames + 'f'  // Use frames format instead of seconds
       console.log(`  Composition duration set to: ${totalFrames} frames (${this.duration}s at ${fps}fps)`)
-      console.log(`⏱️ Total duration calculated: ${this.duration}s (Video 1: ${video1Duration}s + Image: ${imageDuration}s + Video 2: ${video2Duration}s + Video 3: ${video3Duration}s)`)
+      console.log(`⏱️ Total duration calculated: ${this.duration}s`)
 
-      // DEBUGGING: Calculate simple sequential delays (no transitions/offsets)
-      const video1Delay = 0
-      const imageDelay = video1Duration
-      const video2Delay = video1Duration + imageDuration
-      const video3Delay = video1Duration + imageDuration + video2Duration
+      // Calculate sequential delays dynamically
+      const allMediaItems = []
+      let currentDelay = 0
       
-      // Convert delays to frames
-      const video1DelayFrames = video1Delay * fps
-      const imageDelayFrames = imageDelay * fps
-      const video2DelayFrames = video2Delay * fps
-      const video3DelayFrames = video3Delay * fps
+      // Add videos and images in sequence (interleaved based on our current setup)
+      const mediaSequence = [
+        { type: 'video', sourceIndex: 0, duration: videoDurations[0] },
+        { type: 'image', sourceIndex: 0, duration: imageDurations[0] },
+        { type: 'video', sourceIndex: 1, duration: videoDurations[1] },
+        { type: 'video', sourceIndex: 2, duration: videoDurations[2] }
+      ]
       
-      console.log('🔍 DEBUGGING DELAYS (simple sequential):')
-      console.log(`  Video 1 delay: ${video1Delay}s = ${video1DelayFrames} frames`)
-      console.log(`  Image delay: ${imageDelay}s = ${imageDelayFrames} frames`)
-      console.log(`  Video 2 delay: ${video2Delay}s = ${video2DelayFrames} frames`)
-      console.log(`  Video 3 delay: ${video3Delay}s = ${video3DelayFrames} frames`)
+      console.log('🔍 DEBUGGING DELAYS (dynamic sequential):')
       
-      const videoClip1 = new core.VideoClip(videoSource1, {
-        height: '100%',
-        position: 'center',
-        delay: video1DelayFrames + 'f'
-      }).subclip(0, video1Duration * fps)
-      console.log(`📹 First video clip created: delay=${video1DelayFrames}f (${video1Delay}s), subclip=0-${video1Duration * fps} frames`)
-
-      const imageClip = new core.ImageClip(imageSource, {
-        height: '100%',
-        position: 'center',
-        delay: imageDelayFrames + 'f',
-        duration: '5s'
-      })
-      console.log(`🖼️ Image clip created: delay=${imageDelayFrames}f (${imageDelay}s), duration=5s`)
-
-      const videoClip2 = new core.VideoClip(videoSource2, {
-        height: '100%',
-        position: 'center',
-        delay: video2DelayFrames + 'f'
-      }).subclip(0, video2Duration * fps)
-      console.log(`📹 Second video clip created: delay=${video2DelayFrames}f (${video2Delay}s), subclip=0-${video2Duration * fps} frames`)
-
-      const videoClip3 = new core.VideoClip(videoSource3, {
-        height: '100%',
-        position: 'center',
-        delay: video3DelayFrames + 'f'
-      }).subclip(0, video3Duration * fps)
-      console.log(`📹 Third video clip created: delay=${video3DelayFrames}f (${video3Delay}s), subclip=0-${video3Duration * fps} frames`)
-
-      // Create audio clip with source (reduced volume)
-      const audioClip = new core.AudioClip(audioSource, {
-        volume: 0.3  // 30% volume to not overpower video audio
-      })
-      console.log('🔊 Audio clip created with reduced volume')
+      // Create video clips dynamically
+      const videoClips = []
+      const videoLayers = []
+      let videoIndex = 0
       
-      // Create second audio clip to play after first audio ends
-      const audio1Duration = audioSource.duration?.seconds ?? 180  // Fallback to 3 minutes if duration not available
-      const audio2Delay = audio1Duration
-      const audio2DelayFrames = audio2Delay * fps
+      // Create image clips dynamically  
+      const imageClips = []
+      const imageLayers = []
+      let imageIndex = 0
       
-      const audioClip2 = new core.AudioClip(audioSource2, {
-        volume: 0.3,  // Same volume as first audio
-        delay: audio2DelayFrames + 'f'  // Start after first audio ends
-      })
-      console.log(`🔊 Second audio clip created: delay=${audio2DelayFrames}f (${audio2Delay}s), starts after first audio`)
-      console.log(`🎵 Audio sequence: first audio (0-${audio1Duration}s) → second audio (${audio2Delay}s+)`)
+      // Process each media item in sequence
+      for (let i = 0; i < mediaSequence.length; i++) {
+        const mediaItem = mediaSequence[i]
+        const delayFrames = currentDelay * fps
+        
+        if (mediaItem.type === 'video') {
+          const source = loadedVideoSources[mediaItem.sourceIndex]
+          const layer = this.composition.createLayer()
+          
+          const clip = new core.VideoClip(source, {
+            height: '100%',
+            position: 'center',
+            delay: delayFrames + 'f'
+          }).subclip(0, mediaItem.duration * fps)
+          
+          videoClips.push(clip)
+          videoLayers.push(layer)
+          
+          console.log(`  Video ${videoIndex + 1} delay: ${currentDelay}s = ${delayFrames} frames`)
+          console.log(`📹 Video ${videoIndex + 1} clip created: delay=${delayFrames}f (${currentDelay}s), subclip=0-${mediaItem.duration * fps} frames`)
+          videoIndex++
+          
+        } else if (mediaItem.type === 'image') {
+          const source = loadedImageSources[mediaItem.sourceIndex]
+          const layer = this.composition.createLayer()
+          
+          const clip = new core.ImageClip(source, {
+            height: '100%',
+            position: 'center',
+            delay: delayFrames + 'f',
+            duration: mediaItem.duration + 's'
+          })
+          
+          imageClips.push(clip)
+          imageLayers.push(layer)
+          
+          console.log(`  Image ${imageIndex + 1} delay: ${currentDelay}s = ${delayFrames} frames`)
+          console.log(`🖼️ Image ${imageIndex + 1} clip created: delay=${delayFrames}f (${currentDelay}s), duration=${mediaItem.duration}s`)
+          imageIndex++
+        }
+        
+        currentDelay += mediaItem.duration
+      }
+      
+      // Create audio clips dynamically
+      const audioClips = []
+      let audioDelay = 0
+      
+      for (let i = 0; i < loadedAudioSources.length; i++) {
+        const source = loadedAudioSources[i]
+        const delayFrames = audioDelay * fps
+        
+        const clip = new core.AudioClip(source, {
+          volume: 0.3,  // 30% volume to not overpower video audio
+          delay: i === 0 ? 0 : delayFrames + 'f'  // First audio starts immediately, others delayed
+        })
+        
+        audioClips.push(clip)
+        console.log(`🔊 Audio ${i + 1} clip created: delay=${delayFrames}f (${audioDelay}s), volume=30%`)
+        
+        // Update delay for next audio (if any)
+        if (i === 0) {
+          audioDelay = source.duration?.seconds ?? 180
+          console.log(`🎵 Audio sequence: Audio ${i + 1} (0-${audioDelay}s)`)
+        } else {
+          const nextDelay = audioDelay + (source.duration?.seconds ?? 180)
+          console.log(`🎵 Audio sequence: Audio ${i + 1} (${audioDelay}s+)`)
+          audioDelay = nextDelay
+        }
+      }
 
-      // Create separate layers using createLayer and set proper ordering
-      const videoLayer1 = this.composition.createLayer()
-      const imageLayer = this.composition.createLayer()
-      const videoLayer2 = this.composition.createLayer()
-      const videoLayer3 = this.composition.createLayer()
+      // Create audio layer and add all audio clips
       const audioLayer = this.composition.createLayer()
-      console.log('🎛️ Individual layers created via createLayer()')
-
-      // Set layer ordering (lower index = rendered on top)
-      videoLayer1.index(0)  // First video on top
-      imageLayer.index(1)   // Image layer
-      videoLayer2.index(2)  // Second video
-      videoLayer3.index(3)  // Third video
-      audioLayer.index(4)   // Audio at bottom
-      console.log('🔢 Layer ordering attempted with .index()')
       
-      // DEBUGGING: Try different ways to check layer indices
-      console.log('🔍 DEBUGGING LAYER INDICES:')
-      console.log(`  videoLayer1.index(): ${JSON.stringify(videoLayer1.index())}`)
-      console.log(`  imageLayer.index(): ${JSON.stringify(imageLayer.index())}`)
-      console.log(`  videoLayer2.index(): ${JSON.stringify(videoLayer2.index())}`)
-      console.log(`  videoLayer3.index(): ${JSON.stringify(videoLayer3.index())}`)
-      console.log(`  audioLayer.index(): ${JSON.stringify(audioLayer.index())}`)
-      
-      // Try alternative: just use the layers in the order we want them rendered
-      console.log('🔍 LAYER CREATION ORDER (may determine rendering order):')
-      console.log(`  videoLayer1 created first`)
-      console.log(`  imageLayer created second`)
-      console.log(`  videoLayer2 created third`)
-      console.log(`  videoLayer3 created fourth`)
-      console.log(`  audioLayer created fifth`)
+      // Set layer ordering for all dynamic layers
+      console.log('🔢 Setting layer ordering:')
+      for (let i = 0; i < videoLayers.length; i++) {
+        videoLayers[i].index(i)
+        console.log(`  Video layer ${i + 1} index: ${i}`)
+      }
+      for (let i = 0; i < imageLayers.length; i++) {
+        imageLayers[i].index(videoLayers.length + i)
+        console.log(`  Image layer ${i + 1} index: ${videoLayers.length + i}`)
+      }
+      audioLayer.index(videoLayers.length + imageLayers.length)
+      console.log(`  Audio layer index: ${videoLayers.length + imageLayers.length}`)
 
-      // Add each clip to its respective layer with calculated delays
-      await videoLayer1.add(videoClip1)  // First video (starts at 0)
-      await imageLayer.add(imageClip)    // Image (starts after first video)
-      await videoLayer2.add(videoClip2)  // Second video (starts after image)
-      await videoLayer3.add(videoClip3)  // Third video (starts after second video)
-      console.log('✅ All clips added to their respective layers')
+      // Add all clips to their respective layers
+      for (let i = 0; i < videoClips.length; i++) {
+        await videoLayers[i].add(videoClips[i])
+        console.log(`✅ Video ${i + 1} clip added to layer`)
+      }
+      
+      for (let i = 0; i < imageClips.length; i++) {
+        await imageLayers[i].add(imageClips[i])
+        console.log(`✅ Image ${i + 1} clip added to layer`)
+      }
+      
+      for (let i = 0; i < audioClips.length; i++) {
+        await audioLayer.add(audioClips[i])
+        console.log(`✅ Audio ${i + 1} clip added to layer`)
+      }
+      
+      console.log(`✅ All clips added: ${videoClips.length} videos, ${imageClips.length} images, ${audioClips.length} audio tracks`)
       
       // DEBUGGING: Log what's in each layer
       console.log('🔍 DEBUGGING LAYER CONTENTS:')
-      console.log(`  videoLayer1 clips: ${videoLayer1.clips.length}`)
-      console.log(`  imageLayer clips: ${imageLayer.clips.length}`)
-      console.log(`  videoLayer2 clips: ${videoLayer2.clips.length}`)
-      console.log(`  videoLayer3 clips: ${videoLayer3.clips.length}`)
-
-      // Add audio clip to its layer
-      await audioLayer.add(audioClip)  // Audio track
-      console.log('✅ Audio clip added to layer')
+      for (let i = 0; i < videoLayers.length; i++) {
+        console.log(`  videoLayer${i + 1} clips: ${videoLayers[i].clips.length}`)
+      }
+      for (let i = 0; i < imageLayers.length; i++) {
+        console.log(`  imageLayer${i + 1} clips: ${imageLayers[i].clips.length}`)
+      }
       console.log(`  audioLayer clips: ${audioLayer.clips.length}`)
-      
-      // Add second audio clip to the same layer
-      await audioLayer.add(audioClip2)  // Second audio track
-      console.log('✅ Second audio clip added to layer')
-      console.log(`  audioLayer clips: ${audioLayer.clips.length} (both audio files)`)
 
       // Mount composition to player (like working example)
       const player = document.getElementById('player')
@@ -201,20 +240,29 @@ class VideoEditor {
       this.updateTimeDisplay()
       this.updateTimeline()
       
-      console.log(`🎉 Composition with three videos + one image + two audio tracks loaded (sequential, no transitions): ${this.duration}s total duration`)
+      console.log(`🎉 Dynamic composition loaded: ${videoClips.length} videos + ${imageClips.length} images + ${audioClips.length} audio tracks (${this.duration}s total duration)`)
       
       // DEBUGGING: Final composition state
       console.log('🔍 FINAL COMPOSITION STATE:')
       console.log(`  Composition duration: ${this.composition.duration}`)
-      console.log(`  Total layers: ${this.composition.layers ? this.composition.layers.length : 'unknown'}`)
-      console.log(`  Clean sequential timeline:`)
-      console.log(`    Video1: ${video1Delay}s - ${video1Duration}s`)
-      console.log(`    Image: ${imageDelay}s - ${imageDelay + imageDuration}s`)
-      console.log(`    Video2: ${video2Delay}s - ${video2Delay + video2Duration}s`)
-      console.log(`    Video3: ${video3Delay}s - ${video3Delay + video3Duration}s`)
+      console.log(`  Total layers: ${videoLayers.length + imageLayers.length + 1} (${videoLayers.length} video, ${imageLayers.length} image, 1 audio)`)
+      console.log(`  Dynamic sequential timeline:`)
+      
+      // Show timeline based on media sequence
+      let timelineDelay = 0
+      for (let i = 0; i < mediaSequence.length; i++) {
+        const mediaItem = mediaSequence[i]
+        const endTime = timelineDelay + mediaItem.duration
+        console.log(`    ${mediaItem.type.charAt(0).toUpperCase() + mediaItem.type.slice(1)}${mediaItem.sourceIndex + 1}: ${timelineDelay}s - ${endTime}s`)
+        timelineDelay = endTime
+      }
+      
       console.log(`  Audio sequence:`)
-      console.log(`    Audio1 (future-design): 0s - ${audio1Duration}s`)
-      console.log(`    Audio2 (embrace): ${audio2Delay}s onwards`)
+      for (let i = 0; i < audioClips.length; i++) {
+        const startTime = i === 0 ? 0 : (loadedAudioSources[0].duration?.seconds ?? 180)
+        const audioDuration = loadedAudioSources[i].duration?.seconds ?? 'unknown'
+        console.log(`    Audio${i + 1}: ${startTime}s - ${startTime + audioDuration}s`)
+      }
       console.log(`  📺 Clean cuts between segments (no transitions)`)
       console.log('🔍 Ready to test playback!')
       
