@@ -9,14 +9,47 @@ class VideoEditor {
     this.currentTime = 0
     this.duration = 0 // Will be set from video source
     
+    // Show loading overlay
+    this.showLoadingOverlay('Initializing...')
+    
     this.initializeComposition()
     this.setupControls()
     this.setupTimeline()
   }
 
+  showLoadingOverlay(status = 'Loading...') {
+    const overlay = document.getElementById('loading-overlay')
+    const statusElement = document.getElementById('loading-status')
+    
+    if (statusElement) {
+      statusElement.textContent = status
+    }
+    
+    if (overlay) {
+      overlay.classList.remove('hidden')
+    }
+  }
+
+  hideLoadingOverlay() {
+    const overlay = document.getElementById('loading-overlay')
+    
+    if (overlay) {
+      overlay.classList.add('hidden')
+    }
+  }
+
+  updateLoadingStatus(status) {
+    const statusElement = document.getElementById('loading-status')
+    
+    if (statusElement) {
+      statusElement.textContent = status
+    }
+  }
+
   async initializeComposition() {
     try {
       console.log('🎬 Starting composition initialization...')
+      this.updateLoadingStatus('Creating composition...')
       
       // Create composition
       this.composition = new core.Composition()
@@ -24,9 +57,10 @@ class VideoEditor {
 
       // Load media configuration from JSON file
       console.log('📄 Loading media configuration...')
+      this.updateLoadingStatus('Loading media configuration...')
       const response = await fetch('./media-config.json')
       const mediaConfig = await response.json()
-      console.log('✅ Media configuration loaded:', mediaConfig)
+      console.log('✅ Media configuration loaded:', mediaConfig.id)
       
       // Process media items based on playlist order
       const playlistItems = mediaConfig.playlist.map(id => ({
@@ -34,13 +68,7 @@ class VideoEditor {
         ...mediaConfig.media[id]
       }))
       
-      console.log('🎬 Playlist-driven sequence:')
-      playlistItems.forEach((item, index) => {
-        const mediaType = item.type === 'img' ? 'Image' : 'Video'
-        const source = item.type === 'img' ? item.img : item.video
-        console.log(`  ${index + 1}. ${mediaType} (id: ${item.id}) - ${source.substring(0, 50)}${source.length > 50 ? '...' : ''}`)
-      })
-      console.log(`  → Image will play first due to playlist order: [${mediaConfig.playlist.join(', ')}]`)
+      console.log('🎬 Playlist sequence:', playlistItems.map(item => `${item.type}(${item.id})`).join(' → '))
       
       // Separate video and image sources from playlist
       const videoSources = []
@@ -64,30 +92,36 @@ class VideoEditor {
       
       // Load all video sources
       console.log('📂 Loading video sources...')
+      this.updateLoadingStatus(`Loading ${videoSources.length} media sources...`)
       const loadedVideoSources = []
       for (let i = 0; i < videoSources.length; i++) {
+        this.updateLoadingStatus(`Loading media ${i + 1}/${videoSources.length}...`)
         const videoSource = await core.Source.from(videoSources[i], { prefetch: true })
         loadedVideoSources.push(videoSource)
-        console.log(`✅ Video ${i + 1} source loaded with prefetch:`, videoSource)
       }
+      console.log(`✅ ${loadedVideoSources.length} video sources loaded`)
       
       // Load all image sources
       console.log('🖼️ Loading image sources...')
+      this.updateLoadingStatus(`Loading ${imageSources.length} media sources...`)
       const loadedImageSources = []
       for (let i = 0; i < imageSources.length; i++) {
+        this.updateLoadingStatus(`Loading media ${i + 1}/${imageSources.length}...`)
         const imageSource = await core.Source.from(imageSources[i], { prefetch: true })
         loadedImageSources.push(imageSource)
-        console.log(`✅ Image ${i + 1} source loaded with prefetch:`, imageSource)
       }
+      console.log(`✅ ${loadedImageSources.length} image sources loaded`)
       
       // Load all audio sources
       console.log('🎵 Loading audio sources...')
+      this.updateLoadingStatus(`Loading ${audioSources.length} media sources...`)
       const loadedAudioSources = []
       for (let i = 0; i < audioSources.length; i++) {
+        this.updateLoadingStatus(`Loading media ${i + 1}/${audioSources.length}...`)
         const audioSource = await core.Source.from(audioSources[i], { prefetch: true })
         loadedAudioSources.push(audioSource)
-        console.log(`✅ Audio ${i + 1} source loaded with prefetch:`, audioSource)
       }
+      console.log(`✅ ${loadedAudioSources.length} audio sources loaded`)
       
       // Calculate total duration dynamically from all loaded sources
       const videoDurations = loadedVideoSources.map(source => source.duration?.seconds ?? 10)
@@ -107,15 +141,7 @@ class VideoEditor {
       const totalImageDuration = imageDurations.reduce((sum, duration) => sum + duration, 0)
       this.duration = totalVideoDuration + totalImageDuration
       
-      // DEBUGGING: Log all duration calculations
-      console.log('🔍 DEBUGGING DURATIONS:')
-      videoDurations.forEach((duration, index) => {
-        console.log(`  Video ${index + 1} duration: ${duration}s`)
-      })
-      imageDurations.forEach((duration, index) => {
-        console.log(`  Image ${index + 1} duration: ${duration}s`)
-      })
-      console.log(`  TOTAL calculated duration: ${this.duration}s`)
+      console.log(`⏱️ Total composition duration: ${this.duration}s`)
       
       // Set composition duration manually since we're not using sequential mode
       const fps = 30  // Use consistent 30fps for all calculations
@@ -152,8 +178,10 @@ class VideoEditor {
       console.log('📋 Media sequence from playlist:', mediaSequence.map(item => `${item.type}(${item.id})`).join(' → '))
       
       // Calculate sequential delays dynamically
-      const allMediaItems = []
       let currentDelay = 0
+      
+      console.log('🎬 Creating clips and layers...')
+      this.updateLoadingStatus('Creating clips and layers...')
       
       // Create video clips dynamically
       const videoClips = []
@@ -182,9 +210,6 @@ class VideoEditor {
           
           videoClips.push(clip)
           videoLayers.push(layer)
-          
-          console.log(`  Video ${videoIndex + 1} delay: ${currentDelay}s = ${delayFrames} frames`)
-          console.log(`📹 Video ${videoIndex + 1} clip created: delay=${delayFrames}f (${currentDelay}s), subclip=0-${mediaItem.duration * fps} frames`)
           videoIndex++
           
         } else if (mediaItem.type === 'image') {
@@ -200,9 +225,6 @@ class VideoEditor {
           
           imageClips.push(clip)
           imageLayers.push(layer)
-          
-          console.log(`  Image ${imageIndex + 1} delay: ${currentDelay}s = ${delayFrames} frames`)
-          console.log(`🖼️ Image ${imageIndex + 1} clip created: delay=${delayFrames}f (${currentDelay}s), duration=${mediaItem.duration}s`)
           imageIndex++
         }
         
@@ -214,8 +236,6 @@ class VideoEditor {
       let audioDelay = 0
       const audioVolume = mediaConfig.config.backgroundMusicVolume
       
-      console.log(`🔍 Audio configuration: volume=${audioVolume} (${audioVolume * 100}%)`)
-      
       for (let i = 0; i < loadedAudioSources.length; i++) {
         const source = loadedAudioSources[i]
         const delayFrames = audioDelay * fps
@@ -226,15 +246,12 @@ class VideoEditor {
         })
         
         audioClips.push(clip)
-        console.log(`🔊 Audio ${i + 1} clip created: delay=${delayFrames}f (${audioDelay}s), volume=${audioVolume}`)
         
         // Update delay for next audio (if any)
         if (i === 0) {
           audioDelay = source.duration?.seconds ?? 180
-          console.log(`🎵 Audio sequence: Audio ${i + 1} (0-${audioDelay}s)`)
         } else {
           const nextDelay = audioDelay + (source.duration?.seconds ?? 180)
-          console.log(`🎵 Audio sequence: Audio ${i + 1} (${audioDelay}s+)`)
           audioDelay = nextDelay
         }
       }
@@ -243,106 +260,67 @@ class VideoEditor {
       const audioLayer = this.composition.createLayer()
       
       // Set layer ordering for all dynamic layers
-      console.log('🔢 Setting layer ordering:')
       for (let i = 0; i < videoLayers.length; i++) {
         videoLayers[i].index(i)
-        console.log(`  Video layer ${i + 1} index: ${i}`)
       }
       for (let i = 0; i < imageLayers.length; i++) {
         imageLayers[i].index(videoLayers.length + i)
-        console.log(`  Image layer ${i + 1} index: ${videoLayers.length + i}`)
       }
       audioLayer.index(videoLayers.length + imageLayers.length)
-      console.log(`  Audio layer index: ${videoLayers.length + imageLayers.length}`)
 
       // Add all clips to their respective layers
       for (let i = 0; i < videoClips.length; i++) {
         await videoLayers[i].add(videoClips[i])
-        console.log(`✅ Video ${i + 1} clip added to layer`)
       }
       
       for (let i = 0; i < imageClips.length; i++) {
         await imageLayers[i].add(imageClips[i])
-        console.log(`✅ Image ${i + 1} clip added to layer`)
       }
       
       for (let i = 0; i < audioClips.length; i++) {
         await audioLayer.add(audioClips[i])
-        console.log(`✅ Audio ${i + 1} clip added to layer`)
       }
       
-      console.log(`✅ All clips added: ${videoClips.length} videos, ${imageClips.length} images, ${audioClips.length} audio tracks`)
+      console.log(`✅ Composition assembled: ${videoClips.length} videos, ${imageClips.length} images, ${audioClips.length} audio tracks`)
       
-      // DEBUGGING: Log what's in each layer
-      console.log('🔍 DEBUGGING LAYER CONTENTS:')
-      for (let i = 0; i < videoLayers.length; i++) {
-        console.log(`  videoLayer${i + 1} clips: ${videoLayers[i].clips.length}`)
-      }
-      for (let i = 0; i < imageLayers.length; i++) {
-        console.log(`  imageLayer${i + 1} clips: ${imageLayers[i].clips.length}`)
-      }
-      console.log(`  audioLayer clips: ${audioLayer.clips.length}`)
-
       // Mount composition to player (like working example)
+      this.updateLoadingStatus('Mounting composition to player...')
       const player = document.getElementById('player')
       this.composition.mount(player)
       console.log('🖥️ Composition mounted to player')
       
       // Setup composition event listeners
+      this.updateLoadingStatus('Setting up player controls...')
       this.setupCompositionEvents()
       
       // Update UI with new duration
       this.updateTimeDisplay()
       this.updateTimeline()
       
-      console.log(`🎉 JSON-configured composition loaded: ${videoClips.length} videos + ${imageClips.length} images + ${audioClips.length} audio tracks (${this.duration}s total duration)`)
+      console.log(`🎉 JSON-configured composition ready: ${this.duration}s total duration`)
       
-      // DEBUGGING: Final composition state
-      console.log('🔍 FINAL COMPOSITION STATE:')
-      console.log(`  Configuration source: media-config.json`)
-      console.log(`  Composition ID: ${mediaConfig.id}`)
-      console.log(`  Playlist order: [${mediaConfig.playlist.join(', ')}]`)
-      console.log(`  Composition duration: ${this.composition.duration}`)
-      console.log(`  Total layers: ${videoLayers.length + imageLayers.length + 1} (${videoLayers.length} video, ${imageLayers.length} image, 1 audio)`)
-      console.log(`  📋 Playlist-driven timeline (Image plays first!):`)
-      
-      // Show timeline based on media sequence
-      let timelineDelay = 0
-      for (let i = 0; i < mediaSequence.length; i++) {
-        const mediaItem = mediaSequence[i]
-        const endTime = timelineDelay + mediaItem.duration
-        const sequenceNumber = i + 1
-        const mediaTypeDisplay = mediaItem.type === 'image' ? 'Image' : 'Video'
-        console.log(`    ${sequenceNumber}. ${mediaTypeDisplay} (${mediaItem.id}): ${timelineDelay}s - ${endTime}s`)
-        timelineDelay = endTime
-      }
-      
-      console.log(`  Audio sequence:`)
-      for (let i = 0; i < audioClips.length; i++) {
-        const track = mediaConfig.tracks[i]
-        const startTime = i === 0 ? 0 : (loadedAudioSources[0].duration?.seconds ?? 180)
-        const audioDuration = loadedAudioSources[i].duration?.seconds ?? 'unknown'
-        console.log(`    ${track.id}: ${startTime}s - ${startTime + audioDuration}s`)
-      }
-      console.log(`  🎬 Playlist reordering successful - Image now plays first!`)
-      console.log('🔍 Ready to test playback!')
+      // Hide loading overlay - composition is ready!
+      this.hideLoadingOverlay()
       
     } catch (error) {
       console.error('❌ Error initializing composition:', error)
       console.error('Error details:', error.stack)
+      this.updateLoadingStatus('Error loading composition')
+      // Hide overlay on error too
+      setTimeout(() => this.hideLoadingOverlay(), 2000)
     }
   }
 
   setupCompositionEvents() {
     // Listen to composition events (like working example)
     this.composition.on('play', () => {
-      console.log('🔍 COMPOSITION EVENT: play')
+      console.log('▶️ Playback started')
       this.isPlaying = true
       this.updatePlayPauseButtons()
     })
     
     this.composition.on('pause', () => {
-      console.log('🔍 COMPOSITION EVENT: pause')
+      console.log('⏸️ Playback paused')
       this.isPlaying = false
       this.updatePlayPauseButtons()
     })
@@ -352,11 +330,6 @@ class VideoEditor {
       const frame = evt.detail
       const totalFrames = this.composition.duration.frames
       this.currentTime = frame / totalFrames * this.duration
-      
-      // Debug every 30 frames (1 second at 30fps)
-      if (frame % 30 === 0) {
-        console.log(`🔍 PLAYBACK: frame ${frame}/${totalFrames}, time ${this.currentTime.toFixed(2)}s/${this.duration}s`)
-      }
       
       this.updateTimeDisplay()
       this.updateTimeline()

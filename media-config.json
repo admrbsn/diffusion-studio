@@ -1,41 +1,128 @@
 {
     "id": "diffusion-studio-composition",
     "media": {
-        "1": {
-            "type": "video",
-            "video": "/jim_mcgrew (720p).mp4"
-        },
-        "2": {
-            "img": "https://images.pexels.com/photos/32440659/pexels-photo-32440659.jpeg",
-            "type": "img",
-            "duration": 5
-        },
-        "3": {
-            "type": "video",
-            "video": "/Vaibhav.mp4"
-        },
-        "4": {
-            "type": "video",
-            "video": "https://player.vimeo.com/progressive_redirect/playback/1098560016/rendition/720p/file.mp4?loc=external&signature=27531e28a53029453965f9a407132eb22d10e2325b9ffb7490ddf8dabc6a0212"
-        }
+      "1": {
+        "type": "video",
+        "video": "/jim_mcgrew (720p).mp4"
+      },
+      "2": {
+        "img": "https://images.pexels.com/photos/32440659/pexels-photo-32440659.jpeg",
+        "type": "img",
+        "duration": 5
+      },
+      "3": {
+        "type": "video",
+        "video": "/Vaibhav.mp4"
+      },
+      "4": {
+        "type": "video",
+        "video": "https://player.vimeo.com/progressive_redirect/playback/1098560016/rendition/720p/file.mp4?loc=external&signature=27531e28a53029453965f9a407132eb22d10e2325b9ffb7490ddf8dabc6a0212"
+      },
+      "5": {
+        "type": "img",
+        "img": "https://images.pexels.com/photos/32319577/pexels-photo-32319577.jpeg",
+        "duration": 5
+      },
+      "6": {
+        "type": "video",
+        "video": "https://player.vimeo.com/progressive_redirect/playback/1097985179/rendition/360p/file.mp4?loc=external&signature=150d0529963afcd77ae282fdb2e4fe9be50f2699bceb2425a2a9e18beffb999a"
+      },
+      "7": {
+        "type": "video",
+        "video": "https://player.vimeo.com/progressive_redirect/playback/1097975135/rendition/720p/file.mp4?loc=external&signature=476a309e6c362c820efbf506715be649cbb7908a8eba8a0ea8b763dd6f81d773"
+      },
+      "8": {
+        "type": "img",
+        "img": "https://images.pexels.com/photos/30461581/pexels-photo-30461581.jpeg",
+        "duration": 5
+      },
+      "9": {
+        "type": "video",
+        "video": "https://player.vimeo.com/progressive_redirect/playback/1097505444/rendition/480p/file.mp4?loc=external&signature=fa8f46dda0c80fda5baafdbe3bce249a89441f1d30cc4bfd9729747122ffc906"
+      },
+      "10": {
+        "type": "video",
+        "video": "https://player.vimeo.com/progressive_redirect/playback/1097734932/rendition/1080p/file.mp4?loc=external&signature=42bc6ae3265fa7889f319728dbf6cc30937261c8f531094a6b64d87dcf17fd48"
+      },
+      "11": {
+        "type": "video",
+        "video": "https://player.vimeo.com/progressive_redirect/playback/1099707172/rendition/1080p/file.mp4?loc=external&signature=5591d37cfca0b99ed527fae7c4943ab1b06562ba9616ecb350f15002bb56be2e"
+      },
+      "12": {
+        "type": "video",
+        "video": "https://player.vimeo.com/progressive_redirect/playback/1097520999/rendition/720p/file.mp4?loc=external&signature=5690ae67a0eb8c2c3ace39d1b120affa0401c279c25b9d1848d6c30da38ba690"
+      },
+      "13": {
+        "type": "img",
+        "img": "https://images.pexels.com/photos/7559270/pexels-photo-7559270.jpeg",
+        "duration": 5
+      },
+      "14": {
+        "type": "video",
+        "video": "https://player.vimeo.com/progressive_redirect/playback/1097724040/rendition/720p/file.mp4?loc=external&signature=e116a0d986d290ed41a8b5acd8fe59d4934511cfc0ca90d5b773970dda7ea0be"
+      },
+      "15": {
+        "type": "video",
+        "video": "https://player.vimeo.com/progressive_redirect/playback/1097746682/rendition/360p/file.mp4?loc=external&signature=f2a903160e18d4bc3a107eed2ba0ba9b8e591b866ba880159e2ca4a09cd0fedb"
+      },
+      "16": {
+        "type": "img",
+        "img": "https://images.pexels.com/photos/31607802/pexels-photo-31607802.jpeg",
+        "duration": 5
+      },
+      "17": {
+        "type": "img",
+        "img": "https://images.pexels.com/photos/32742386/pexels-photo-32742386.jpeg",
+        "duration": 5
+      },
+      "18": {
+        "type": "video",
+        "video": "https://player.vimeo.com/progressive_redirect/playback/1097759951/rendition/360p/file.mp4?loc=external&signature=3779ecd1db532b32413a5f93a4ac5f94e610c7cd88f609029c76d9377a82c0c4"
+      },
+      "19": {
+        "type": "img",
+        "img": "https://images.pexels.com/photos/32507242/pexels-photo-32507242.jpeg",
+        "duration": 5
+      },
+      "20": {
+        "type": "video",
+        "video": "https://player.vimeo.com/progressive_redirect/playback/1097865863/rendition/720p/file.mp4?loc=external&signature=ed3e5242183dce115d27af353f5e95ea960e7b46a1af00cb0452ef083ad0799c"
+      }
     },
     "config": {
-        "backgroundMusicVolume": 0.1
+      "backgroundMusicVolume": 0.1
     },
     "tracks": [
-        {
-            "id": "audio_1",
-            "src": "/future-design-344320.mp3"
-        },
-        {
-            "id": "audio_2",
-            "src": "/embrace-364091.mp3"
-        }
+      {
+        "id": "audio_1",
+        "src": "/future-design-344320.mp3"
+      },
+      {
+        "id": "audio_2",
+        "src": "/embrace-364091.mp3"
+      }
     ],
     "playlist": [
-        "2",
-        "1", 
-        "3",
-        "4"
+      "2",
+      "1",
+      "3",
+      "4",
+      "5",
+      "6",
+      "7",
+      "8",
+      "9",
+      "10",
+      "11",
+      "12",
+      "13",
+      "14",
+      "15",
+      "16",
+      "17",
+      "18",
+      "19",
+      "20"
     ]
-} 
+  }
+  
