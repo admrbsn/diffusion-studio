@@ -92,10 +92,10 @@ class VideoEditor {
       
       // Load all video sources
       console.log('📂 Loading video sources...')
-      this.updateLoadingStatus(`Loading ${videoSources.length} media sources...`)
+      this.updateLoadingStatus(`Loading ${videoSources.length} videos...`)
       const loadedVideoSources = []
       for (let i = 0; i < videoSources.length; i++) {
-        this.updateLoadingStatus(`Loading media ${i + 1}/${videoSources.length}...`)
+        this.updateLoadingStatus(`Loading videos ${i + 1}/${videoSources.length}...`)
         const videoSource = await core.Source.from(videoSources[i], { prefetch: true })
         loadedVideoSources.push(videoSource)
       }
@@ -103,10 +103,10 @@ class VideoEditor {
       
       // Load all image sources
       console.log('🖼️ Loading image sources...')
-      this.updateLoadingStatus(`Loading ${imageSources.length} media sources...`)
+      this.updateLoadingStatus(`Loading ${imageSources.length} images...`)
       const loadedImageSources = []
       for (let i = 0; i < imageSources.length; i++) {
-        this.updateLoadingStatus(`Loading media ${i + 1}/${imageSources.length}...`)
+        this.updateLoadingStatus(`Loading images ${i + 1}/${imageSources.length}...`)
         const imageSource = await core.Source.from(imageSources[i], { prefetch: true })
         loadedImageSources.push(imageSource)
       }
@@ -114,10 +114,10 @@ class VideoEditor {
       
       // Load all audio sources
       console.log('🎵 Loading audio sources...')
-      this.updateLoadingStatus(`Loading ${audioSources.length} media sources...`)
+      this.updateLoadingStatus(`Loading ${audioSources.length} audio tracks...`)
       const loadedAudioSources = []
       for (let i = 0; i < audioSources.length; i++) {
-        this.updateLoadingStatus(`Loading media ${i + 1}/${audioSources.length}...`)
+        this.updateLoadingStatus(`Loading audio tracks ${i + 1}/${audioSources.length}...`)
         const audioSource = await core.Source.from(audioSources[i], { prefetch: true })
         loadedAudioSources.push(audioSource)
       }
