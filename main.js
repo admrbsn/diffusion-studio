@@ -22,21 +22,39 @@ class VideoEditor {
       this.composition = new core.Composition()
       console.log('✅ Composition created')
 
-      // Define media sources in arrays (easier to transition to JSON later)
-      const videoSources = [
-        '/jim_mcgrew (720p).mp4',
-        '/Vaibhav.mp4',
-        'https://player.vimeo.com/progressive_redirect/playback/1098560016/rendition/720p/file.mp4?loc=external&signature=27531e28a53029453965f9a407132eb22d10e2325b9ffb7490ddf8dabc6a0212'
-      ]
+      // Load media configuration from JSON file
+      console.log('📄 Loading media configuration...')
+      const response = await fetch('./media-config.json')
+      const mediaConfig = await response.json()
+      console.log('✅ Media configuration loaded:', mediaConfig)
       
-      const imageSources = [
-        'https://images.pexels.com/photos/32440659/pexels-photo-32440659.jpeg'
-      ]
+      // Process media items based on playlist order
+      const playlistItems = mediaConfig.playlist.map(id => ({
+        id,
+        ...mediaConfig.media[id]
+      }))
       
-      const audioSources = [
-        '/future-design-344320.mp3',
-        '/embrace-364091.mp3'
-      ]
+      console.log('🎬 Playlist order:', playlistItems.map(item => `${item.type} (${item.id})`).join(' → '))
+      
+      // Separate video and image sources from playlist
+      const videoSources = []
+      const imageSources = []
+      
+      playlistItems.forEach(item => {
+        if (item.type === 'video') {
+          videoSources.push(item.video)
+        } else if (item.type === 'img') {
+          imageSources.push(item.img)
+        }
+      })
+      
+      // Audio sources from tracks (in order)
+      const audioSources = mediaConfig.tracks.map(track => track.src)
+      
+      console.log('📋 Processed sources:')
+      console.log(`  Videos: ${videoSources.length}`, videoSources)
+      console.log(`  Images: ${imageSources.length}`, imageSources)
+      console.log(`  Audio: ${audioSources.length}`, audioSources)
       
       // Load all video sources
       console.log('📂 Loading video sources...')
@@ -67,7 +85,18 @@ class VideoEditor {
       
       // Calculate total duration dynamically from all loaded sources
       const videoDurations = loadedVideoSources.map(source => source.duration?.seconds ?? 10)
-      const imageDurations = [5] // 5 seconds for the image (could be from source later)
+      
+      // Get image durations from JSON config (now using integers)
+      const imageDurations = []
+      let imageDurationIndex = 0
+      playlistItems.forEach(item => {
+        if (item.type === 'img') {
+          const duration = item.duration || 5  // Default to 5 seconds if not specified
+          imageDurations.push(duration)
+          imageDurationIndex++
+        }
+      })
+      
       const totalVideoDuration = videoDurations.reduce((sum, duration) => sum + duration, 0)
       const totalImageDuration = imageDurations.reduce((sum, duration) => sum + duration, 0)
       this.duration = totalVideoDuration + totalImageDuration
@@ -89,19 +118,36 @@ class VideoEditor {
       console.log(`  Composition duration set to: ${totalFrames} frames (${this.duration}s at ${fps}fps)`)
       console.log(`⏱️ Total duration calculated: ${this.duration}s`)
 
+      // Build media sequence from playlist order
+      const mediaSequence = []
+      let videoSourceIndex = 0
+      let imageSourceIndex = 0
+      
+      playlistItems.forEach(item => {
+        if (item.type === 'video') {
+          mediaSequence.push({
+            type: 'video',
+            sourceIndex: videoSourceIndex,
+            duration: videoDurations[videoSourceIndex],
+            id: item.id
+          })
+          videoSourceIndex++
+        } else if (item.type === 'img') {
+          mediaSequence.push({
+            type: 'image',
+            sourceIndex: imageSourceIndex,
+            duration: imageDurations[imageSourceIndex],
+            id: item.id
+          })
+          imageSourceIndex++
+        }
+      })
+      
+      console.log('📋 Media sequence from playlist:', mediaSequence.map(item => `${item.type}(${item.id})`).join(' → '))
+      
       // Calculate sequential delays dynamically
       const allMediaItems = []
       let currentDelay = 0
-      
-      // Add videos and images in sequence (interleaved based on our current setup)
-      const mediaSequence = [
-        { type: 'video', sourceIndex: 0, duration: videoDurations[0] },
-        { type: 'image', sourceIndex: 0, duration: imageDurations[0] },
-        { type: 'video', sourceIndex: 1, duration: videoDurations[1] },
-        { type: 'video', sourceIndex: 2, duration: videoDurations[2] }
-      ]
-      
-      console.log('🔍 DEBUGGING DELAYS (dynamic sequential):')
       
       // Create video clips dynamically
       const videoClips = []
@@ -157,21 +203,24 @@ class VideoEditor {
         currentDelay += mediaItem.duration
       }
       
-      // Create audio clips dynamically
+      // Create audio clips dynamically using config
       const audioClips = []
       let audioDelay = 0
+      const audioVolume = mediaConfig.config.backgroundMusicVolume
+      
+      console.log(`🔍 Audio configuration: volume=${audioVolume} (${audioVolume * 100}%)`)
       
       for (let i = 0; i < loadedAudioSources.length; i++) {
         const source = loadedAudioSources[i]
         const delayFrames = audioDelay * fps
         
         const clip = new core.AudioClip(source, {
-          volume: 0.3,  // 30% volume to not overpower video audio
+          volume: audioVolume,  // Use volume from JSON config
           delay: i === 0 ? 0 : delayFrames + 'f'  // First audio starts immediately, others delayed
         })
         
         audioClips.push(clip)
-        console.log(`🔊 Audio ${i + 1} clip created: delay=${delayFrames}f (${audioDelay}s), volume=30%`)
+        console.log(`🔊 Audio ${i + 1} clip created: delay=${delayFrames}f (${audioDelay}s), volume=${audioVolume}`)
         
         // Update delay for next audio (if any)
         if (i === 0) {
@@ -240,30 +289,33 @@ class VideoEditor {
       this.updateTimeDisplay()
       this.updateTimeline()
       
-      console.log(`🎉 Dynamic composition loaded: ${videoClips.length} videos + ${imageClips.length} images + ${audioClips.length} audio tracks (${this.duration}s total duration)`)
+      console.log(`🎉 JSON-configured composition loaded: ${videoClips.length} videos + ${imageClips.length} images + ${audioClips.length} audio tracks (${this.duration}s total duration)`)
       
       // DEBUGGING: Final composition state
       console.log('🔍 FINAL COMPOSITION STATE:')
+      console.log(`  Configuration source: media-config.json`)
+      console.log(`  Composition ID: ${mediaConfig.id}`)
       console.log(`  Composition duration: ${this.composition.duration}`)
       console.log(`  Total layers: ${videoLayers.length + imageLayers.length + 1} (${videoLayers.length} video, ${imageLayers.length} image, 1 audio)`)
-      console.log(`  Dynamic sequential timeline:`)
+      console.log(`  JSON-driven timeline:`)
       
       // Show timeline based on media sequence
       let timelineDelay = 0
       for (let i = 0; i < mediaSequence.length; i++) {
         const mediaItem = mediaSequence[i]
         const endTime = timelineDelay + mediaItem.duration
-        console.log(`    ${mediaItem.type.charAt(0).toUpperCase() + mediaItem.type.slice(1)}${mediaItem.sourceIndex + 1}: ${timelineDelay}s - ${endTime}s`)
+        console.log(`    ${mediaItem.type.charAt(0).toUpperCase() + mediaItem.type.slice(1)} (${mediaItem.id}): ${timelineDelay}s - ${endTime}s`)
         timelineDelay = endTime
       }
       
       console.log(`  Audio sequence:`)
       for (let i = 0; i < audioClips.length; i++) {
+        const track = mediaConfig.tracks[i]
         const startTime = i === 0 ? 0 : (loadedAudioSources[0].duration?.seconds ?? 180)
         const audioDuration = loadedAudioSources[i].duration?.seconds ?? 'unknown'
-        console.log(`    Audio${i + 1}: ${startTime}s - ${startTime + audioDuration}s`)
+        console.log(`    ${track.id}: ${startTime}s - ${startTime + audioDuration}s`)
       }
-      console.log(`  📺 Clean cuts between segments (no transitions)`)
+      console.log(`  📺 JSON-configured composition ready!`)
       console.log('🔍 Ready to test playback!')
       
     } catch (error) {

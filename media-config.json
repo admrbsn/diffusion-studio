@@ -1,0 +1,41 @@
+{
+    "id": "diffusion-studio-composition",
+    "media": {
+        "1": {
+            "type": "video",
+            "video": "/jim_mcgrew (720p).mp4"
+        },
+        "2": {
+            "img": "https://images.pexels.com/photos/32440659/pexels-photo-32440659.jpeg",
+            "type": "img",
+            "duration": 5
+        },
+        "3": {
+            "type": "video",
+            "video": "/Vaibhav.mp4"
+        },
+        "4": {
+            "type": "video",
+            "video": "https://player.vimeo.com/progressive_redirect/playback/1098560016/rendition/720p/file.mp4?loc=external&signature=27531e28a53029453965f9a407132eb22d10e2325b9ffb7490ddf8dabc6a0212"
+        }
+    },
+    "config": {
+        "backgroundMusicVolume": 0.1
+    },
+    "tracks": [
+        {
+            "id": "audio_1",
+            "src": "/future-design-344320.mp3"
+        },
+        {
+            "id": "audio_2",
+            "src": "/embrace-364091.mp3"
+        }
+    ],
+    "playlist": [
+        "1",
+        "2", 
+        "3",
+        "4"
+    ]
+} 
