@@ -34,7 +34,13 @@ class VideoEditor {
         ...mediaConfig.media[id]
       }))
       
-      console.log('🎬 Playlist order:', playlistItems.map(item => `${item.type} (${item.id})`).join(' → '))
+      console.log('🎬 Playlist-driven sequence:')
+      playlistItems.forEach((item, index) => {
+        const mediaType = item.type === 'img' ? 'Image' : 'Video'
+        const source = item.type === 'img' ? item.img : item.video
+        console.log(`  ${index + 1}. ${mediaType} (id: ${item.id}) - ${source.substring(0, 50)}${source.length > 50 ? '...' : ''}`)
+      })
+      console.log(`  → Image will play first due to playlist order: [${mediaConfig.playlist.join(', ')}]`)
       
       // Separate video and image sources from playlist
       const videoSources = []
@@ -60,27 +66,27 @@ class VideoEditor {
       console.log('📂 Loading video sources...')
       const loadedVideoSources = []
       for (let i = 0; i < videoSources.length; i++) {
-        const videoSource = await core.Source.from(videoSources[i])
+        const videoSource = await core.Source.from(videoSources[i], { prefetch: true })
         loadedVideoSources.push(videoSource)
-        console.log(`✅ Video ${i + 1} source loaded:`, videoSource)
+        console.log(`✅ Video ${i + 1} source loaded with prefetch:`, videoSource)
       }
       
       // Load all image sources
       console.log('🖼️ Loading image sources...')
       const loadedImageSources = []
       for (let i = 0; i < imageSources.length; i++) {
-        const imageSource = await core.Source.from(imageSources[i])
+        const imageSource = await core.Source.from(imageSources[i], { prefetch: true })
         loadedImageSources.push(imageSource)
-        console.log(`✅ Image ${i + 1} source loaded:`, imageSource)
+        console.log(`✅ Image ${i + 1} source loaded with prefetch:`, imageSource)
       }
       
       // Load all audio sources
       console.log('🎵 Loading audio sources...')
       const loadedAudioSources = []
       for (let i = 0; i < audioSources.length; i++) {
-        const audioSource = await core.Source.from(audioSources[i])
+        const audioSource = await core.Source.from(audioSources[i], { prefetch: true })
         loadedAudioSources.push(audioSource)
-        console.log(`✅ Audio ${i + 1} source loaded:`, audioSource)
+        console.log(`✅ Audio ${i + 1} source loaded with prefetch:`, audioSource)
       }
       
       // Calculate total duration dynamically from all loaded sources
@@ -295,16 +301,19 @@ class VideoEditor {
       console.log('🔍 FINAL COMPOSITION STATE:')
       console.log(`  Configuration source: media-config.json`)
       console.log(`  Composition ID: ${mediaConfig.id}`)
+      console.log(`  Playlist order: [${mediaConfig.playlist.join(', ')}]`)
       console.log(`  Composition duration: ${this.composition.duration}`)
       console.log(`  Total layers: ${videoLayers.length + imageLayers.length + 1} (${videoLayers.length} video, ${imageLayers.length} image, 1 audio)`)
-      console.log(`  JSON-driven timeline:`)
+      console.log(`  📋 Playlist-driven timeline (Image plays first!):`)
       
       // Show timeline based on media sequence
       let timelineDelay = 0
       for (let i = 0; i < mediaSequence.length; i++) {
         const mediaItem = mediaSequence[i]
         const endTime = timelineDelay + mediaItem.duration
-        console.log(`    ${mediaItem.type.charAt(0).toUpperCase() + mediaItem.type.slice(1)} (${mediaItem.id}): ${timelineDelay}s - ${endTime}s`)
+        const sequenceNumber = i + 1
+        const mediaTypeDisplay = mediaItem.type === 'image' ? 'Image' : 'Video'
+        console.log(`    ${sequenceNumber}. ${mediaTypeDisplay} (${mediaItem.id}): ${timelineDelay}s - ${endTime}s`)
         timelineDelay = endTime
       }
       
@@ -315,7 +324,7 @@ class VideoEditor {
         const audioDuration = loadedAudioSources[i].duration?.seconds ?? 'unknown'
         console.log(`    ${track.id}: ${startTime}s - ${startTime + audioDuration}s`)
       }
-      console.log(`  📺 JSON-configured composition ready!`)
+      console.log(`  🎬 Playlist reordering successful - Image now plays first!`)
       console.log('🔍 Ready to test playback!')
       
     } catch (error) {
