@@ -60,25 +60,11 @@ class VideoEditor {
       this.updateLoadingStatus('Loading media configuration...')
       const response = await fetch('/media-config.json')
       
-      // Debug what we actually got back
-      console.log('📄 Fetch response status:', response.status)
-      console.log('📄 Fetch response headers:', response.headers.get('content-type'))
-      
       if (!response.ok) {
         throw new Error(`Failed to load media-config.json: ${response.status} ${response.statusText}`)
       }
       
-      const responseText = await response.text()
-      console.log('📄 Raw response (first 200 chars):', responseText.substring(0, 200))
-      
-      let mediaConfig
-      try {
-        mediaConfig = JSON.parse(responseText)
-      } catch (parseError) {
-        console.error('❌ JSON Parse Error. Response was:', responseText)
-        throw new Error(`Invalid JSON in media-config.json: ${parseError.message}`)
-      }
-      
+      const mediaConfig = await response.json()
       console.log('✅ Media configuration loaded:', mediaConfig.id)
       
       // Process media items based on playlist order
