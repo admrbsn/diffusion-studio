@@ -99,9 +99,18 @@ class VideoEditor {
       console.log('📂 Loading video sources...')
       this.updateLoadingStatus(`Loading ${videoSources.length} videos...`)
       const loadedVideoSources = []
+      
+      // Detect Safari iOS for different loading strategy
+      const isSafariIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent)
+      
       for (let i = 0; i < videoSources.length; i++) {
         this.updateLoadingStatus(`Loading videos ${i + 1}/${videoSources.length}...`)
-        const videoSource = await core.Source.from(videoSources[i], { prefetch: true })
+        
+        // Use different loading strategy for Safari iOS
+        const videoSource = await core.Source.from(videoSources[i], { 
+          prefetch: !isSafariIOS, // Disable prefetch on Safari iOS
+          crossOrigin: 'anonymous' // Explicit CORS handling
+        })
         loadedVideoSources.push(videoSource)
       }
       console.log(`✅ ${loadedVideoSources.length} video sources loaded`)
