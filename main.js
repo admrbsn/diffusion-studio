@@ -9,6 +9,13 @@ class VideoEditor {
     this.currentTime = 0
     this.duration = 0 // Will be set from video source
     
+    // Detect Safari iOS once and store it
+    this.isSafariIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent)
+    console.log(`🔍 Browser detection: Safari iOS = ${this.isSafariIOS}`)
+    
+    // Track user-initiated play for Safari iOS
+    this.userInitiatedPlay = false
+    
     // Show loading overlay
     this.showLoadingOverlay('Initializing...')
     
@@ -100,15 +107,12 @@ class VideoEditor {
       this.updateLoadingStatus(`Loading ${videoSources.length} videos...`)
       const loadedVideoSources = []
       
-      // Detect Safari iOS for different loading strategy
-      const isSafariIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent)
-      
       for (let i = 0; i < videoSources.length; i++) {
         this.updateLoadingStatus(`Loading videos ${i + 1}/${videoSources.length}...`)
         
         // Use different loading strategy for Safari iOS
         const videoSource = await core.Source.from(videoSources[i], { 
-          prefetch: !isSafariIOS, // Disable prefetch on Safari iOS
+          prefetch: !this.isSafariIOS, // Disable prefetch on Safari iOS
           crossOrigin: 'anonymous' // Explicit CORS handling
         })
         loadedVideoSources.push(videoSource)
@@ -354,16 +358,20 @@ class VideoEditor {
       this.composition.mount(player)
       console.log('🖥️ Composition mounted to player')
       
+      // Handle Safari iOS autoplay restrictions BEFORE setting up events
+      if (this.isSafariIOS) {
+        console.log('🍎 Safari iOS detected - preventing autoplay')
+        // Don't auto-start playback on Safari iOS
+        try {
+          this.composition.pause()
+        } catch (error) {
+          console.log('⚠️ Could not pause composition immediately:', error.message)
+        }
+      }
+      
       // Setup composition event listeners
       this.updateLoadingStatus('Setting up player controls...')
       this.setupCompositionEvents()
-      
-      // Handle Safari iOS autoplay restrictions
-      if (isSafariIOS) {
-        console.log('🍎 Safari iOS detected - preventing autoplay')
-        // Don't auto-start playback on Safari iOS
-        this.composition.pause()
-      }
       
       // Update UI with new duration
       this.updateTimeDisplay()
@@ -389,6 +397,15 @@ class VideoEditor {
       console.log('▶️ Playback started')
       this.isPlaying = true
       this.updatePlayPauseButtons()
+      
+      // For Safari iOS, immediately pause if this was an unwanted autoplay
+      if (this.isSafariIOS && !this.userInitiatedPlay) {
+        console.log('🛑 Blocking unwanted autoplay on Safari iOS')
+        setTimeout(() => {
+          this.composition.pause()
+        }, 0)
+        return
+      }
     })
     
     this.composition.on('pause', () => {
@@ -434,6 +451,9 @@ class VideoEditor {
 
   async play() {
     if (this.composition && !this.isPlaying) {
+      // Mark as user-initiated play
+      this.userInitiatedPlay = true
+      
       try {
         await this.composition.play()
       } catch (error) {
@@ -497,6 +517,8 @@ class VideoEditor {
     const startButton = content.querySelector('#start-playback')
     startButton.addEventListener('click', async () => {
       try {
+        // Mark as user-initiated play
+        this.userInitiatedPlay = true
         await this.composition.play()
         overlay.remove()
       } catch (error) {
