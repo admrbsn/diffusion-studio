@@ -236,28 +236,74 @@ class VideoEditor {
         currentDelay += mediaItem.duration
       }
       
-      // Create audio clips dynamically using config
+      // Create audio clips dynamically using config with looping
       const audioClips = []
-      let audioDelay = 0
       const audioVolume = mediaConfig.config.backgroundMusicVolume
+      const audioLoopEnabled = mediaConfig.config.audioLoopEnabled
       
-      for (let i = 0; i < loadedAudioSources.length; i++) {
-        const source = loadedAudioSources[i]
-        const delayFrames = audioDelay * fps
+      if (audioLoopEnabled && loadedAudioSources.length > 0) {
+        // Calculate total audio cycle duration
+        const audioDurations = mediaConfig.tracks.map(track => track.duration)
+        const totalAudioCycleDuration = audioDurations.reduce((sum, duration) => sum + duration, 0)
         
-        const clip = new core.AudioClip(source, {
-          volume: audioVolume,  // Use volume from JSON config
-          delay: i === 0 ? 0 : delayFrames + 'f'  // First audio starts immediately, others delayed
-        })
+        console.log(`🎵 Audio cycle duration: ${totalAudioCycleDuration}s`)
+        console.log(`🎬 Total composition duration: ${this.duration}s`)
         
-        audioClips.push(clip)
+        // Calculate how many complete cycles we need
+        const cyclesNeeded = Math.ceil(this.duration / totalAudioCycleDuration)
+        console.log(`🔄 Audio cycles needed: ${cyclesNeeded}`)
         
-        // Update delay for next audio (if any)
-        if (i === 0) {
-          audioDelay = source.duration?.seconds ?? 180
-        } else {
-          const nextDelay = audioDelay + (source.duration?.seconds ?? 180)
-          audioDelay = nextDelay
+        // Create audio clips for all cycles
+        let audioDelay = 0
+        
+        for (let cycle = 0; cycle < cyclesNeeded; cycle++) {
+          for (let trackIndex = 0; trackIndex < loadedAudioSources.length; trackIndex++) {
+            const source = loadedAudioSources[trackIndex]
+            const trackDuration = audioDurations[trackIndex]
+            const delayFrames = audioDelay * fps
+            
+            // Stop creating clips if we've exceeded the total composition duration
+            if (audioDelay >= this.duration) {
+              break
+            }
+            
+            const clip = new core.AudioClip(source, {
+              volume: audioVolume,
+              delay: delayFrames + 'f'
+            })
+            
+            audioClips.push(clip)
+            console.log(`🎵 Added audio clip ${cycle + 1}.${trackIndex + 1}: delay=${audioDelay}s, duration=${trackDuration}s`)
+            
+            audioDelay += trackDuration
+          }
+          
+          // Break outer loop if we've exceeded duration
+          if (audioDelay >= this.duration) {
+            break
+          }
+        }
+        
+      } else {
+        // Original non-looping behavior
+        let audioDelay = 0
+        for (let i = 0; i < loadedAudioSources.length; i++) {
+          const source = loadedAudioSources[i]
+          const delayFrames = audioDelay * fps
+          
+          const clip = new core.AudioClip(source, {
+            volume: audioVolume,
+            delay: i === 0 ? 0 : delayFrames + 'f'
+          })
+          
+          audioClips.push(clip)
+          
+          if (i === 0) {
+            audioDelay = source.duration?.seconds ?? 180
+          } else {
+            const nextDelay = audioDelay + (source.duration?.seconds ?? 180)
+            audioDelay = nextDelay
+          }
         }
       }
 
