@@ -9,44 +9,12 @@ class VideoEditor {
     this.currentTime = 0
     this.duration = 0 // Will be set from video source
     
-    // Detect Safari iOS once and store it  
-    console.log(`🔍 User Agent: ${navigator.userAgent}`)
-    
-    // TEMPORARY: Hardcode iOS Safari logic for everyone to test
-    const isActualIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && /Mobile/.test(navigator.userAgent)
-    const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome|CriOS|FxiOS|EdgiOS/.test(navigator.userAgent)
-    const isMacOS = /Macintosh/.test(navigator.userAgent) && /Intel Mac OS X/.test(navigator.userAgent)
-    const isAndroid = /Android/.test(navigator.userAgent)
-    
-    this.isSafariIOS = true // HARDCODED for testing
-    this.hasAutoplayRestrictions = true // HARDCODED for testing
-    
-    console.log(`🔍 Browser detection: iOS = ${isActualIOS}, Safari = ${isSafari}, macOS = ${isMacOS}`)
-    console.log(`🔍 Safari iOS = ${this.isSafariIOS}, Has autoplay restrictions = ${this.hasAutoplayRestrictions}`)
-    
-    // Track user-initiated play for Safari iOS
-    this.userInitiatedPlay = false
-    
-    // Set up global error handler for autoplay issues
-    this.setupGlobalErrorHandler()
-    
     // Show loading overlay
     this.showLoadingOverlay('Initializing...')
     
     this.initializeComposition()
     this.setupControls()
     this.setupTimeline()
-  }
-
-  setupGlobalErrorHandler() {
-    // Handle unhandled promise rejections silently for mobile autoplay issues
-    window.addEventListener('unhandledrejection', (event) => {
-      if (event.reason && event.reason.name === 'NotAllowedError') {
-        console.log('🚫 Suppressing autoplay error during playback')
-        event.preventDefault() // Prevent the error from appearing in console
-        // Don't show prompt during playback - just suppress the error
-      }
-    })
   }
 
   showLoadingOverlay(status = 'Loading...') {
@@ -135,11 +103,7 @@ class VideoEditor {
       for (let i = 0; i < videoSources.length; i++) {
         this.updateLoadingStatus(`Loading videos ${i + 1}/${videoSources.length}...`)
         
-        // Use different loading strategy for mobile devices
-        const videoSource = await core.Source.from(videoSources[i], { 
-          prefetch: !this.hasAutoplayRestrictions, // Disable prefetch on mobile
-          crossOrigin: 'anonymous' // Explicit CORS handling
-        })
+        const videoSource = await core.Source.from(videoSources[i], { prefetch: true })
         loadedVideoSources.push(videoSource)
       }
       console.log(`✅ ${loadedVideoSources.length} video sources loaded`)
@@ -383,17 +347,6 @@ class VideoEditor {
       this.composition.mount(player)
       console.log('🖥️ Composition mounted to player')
       
-      // Handle mobile autoplay restrictions BEFORE setting up events
-      if (this.hasAutoplayRestrictions) {
-        console.log('📱 Mobile device detected - preventing autoplay')
-        // Don't auto-start playback on mobile devices
-        try {
-          this.composition.pause()
-        } catch (error) {
-          console.log('⚠️ Could not pause composition immediately:', error.message)
-        }
-      }
-      
       // Setup composition event listeners
       this.updateLoadingStatus('Setting up player controls...')
       this.setupCompositionEvents()
@@ -406,12 +359,6 @@ class VideoEditor {
       
       // Hide loading overlay - composition is ready!
       this.hideLoadingOverlay()
-      
-      // Show initial play prompt for mobile devices
-      if (this.hasAutoplayRestrictions) {
-        console.log('📱 Showing initial play prompt for mobile device')
-        this.showPlaybackPrompt()
-      }
       
     } catch (error) {
       console.error('❌ Error initializing composition:', error)
@@ -428,15 +375,6 @@ class VideoEditor {
       console.log('▶️ Playback started')
       this.isPlaying = true
       this.updatePlayPauseButtons()
-      
-      // Only block initial autoplay, not user-initiated playback
-      if (this.hasAutoplayRestrictions && !this.userInitiatedPlay) {
-        console.log('🛑 Blocking initial autoplay on mobile device')
-        setTimeout(() => {
-          this.composition.pause()
-        }, 0)
-        return
-      }
     })
     
     this.composition.on('pause', () => {
@@ -480,91 +418,10 @@ class VideoEditor {
     })
   }
 
-  async play() {
+    play() {
     if (this.composition && !this.isPlaying) {
-      // Mark as user-initiated play
-      this.userInitiatedPlay = true
-      
-      try {
-        await this.composition.play()
-      } catch (error) {
-        console.warn('🚫 Playback blocked by browser autoplay policy:', error.message)
-        
-        // Only show prompt if we haven't already shown it and this is the initial play
-        if ((error.name === 'NotAllowedError' || error.message.includes('autoplay')) && 
-            !document.getElementById('autoplay-overlay')) {
-          this.showPlaybackPrompt()
-        }
-      }
+      this.composition.play()
     }
-  }
-
-  showPlaybackPrompt() {
-    // Remove any existing overlay first
-    const existingOverlay = document.getElementById('autoplay-overlay')
-    if (existingOverlay) {
-      existingOverlay.remove()
-    }
-    
-    // Create overlay for user interaction
-    const overlay = document.createElement('div')
-    overlay.id = 'autoplay-overlay'
-    overlay.style.cssText = `
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(26, 26, 26, 0.95);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 10000;
-      backdrop-filter: blur(8px);
-    `
-    
-    const content = document.createElement('div')
-    content.style.cssText = `
-      text-align: center;
-      padding: 40px;
-      background: rgba(42, 42, 42, 0.9);
-      border-radius: 12px;
-      border: 1px solid #404040;
-      max-width: 400px;
-      margin: 0 20px;
-    `
-    
-    content.innerHTML = `
-      <h2 style="color: white; margin-bottom: 16px;">🎬 Tribute Ready</h2>
-      <p style="color: #ccc; margin-bottom: 24px;">Tap to start the video tribute</p>
-      <button id="start-playback" style="
-        background: #646cff;
-        color: white;
-        border: none;
-        padding: 12px 24px;
-        border-radius: 6px;
-        font-size: 16px;
-        cursor: pointer;
-      ">▶️ Start Tribute</button>
-    `
-    
-    overlay.appendChild(content)
-    document.body.appendChild(overlay)
-    
-    // Handle user interaction
-    const startButton = content.querySelector('#start-playback')
-    startButton.addEventListener('click', async () => {
-      try {
-        // Mark as user-initiated play
-        this.userInitiatedPlay = true
-        await this.composition.play()
-        overlay.remove()
-      } catch (error) {
-        console.error('Failed to start playback:', error)
-        startButton.textContent = 'Playback Error'
-        startButton.style.background = '#ef4444'
-      }
-    })
   }
 
   pause() {
