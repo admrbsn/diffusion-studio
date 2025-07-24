@@ -255,17 +255,19 @@ class VideoEditor {
         
         // Create audio clips for all cycles
         let audioDelay = 0
+        let clipsCreated = 0
         
-        for (let cycle = 0; cycle < cyclesNeeded; cycle++) {
+        outerLoop: for (let cycle = 0; cycle < cyclesNeeded; cycle++) {
           for (let trackIndex = 0; trackIndex < loadedAudioSources.length; trackIndex++) {
+            // Stop creating clips if we've exceeded the total composition duration
+            if (audioDelay >= this.duration) {
+              console.log(`🛑 Stopping audio loop: reached composition duration (${audioDelay}s >= ${this.duration}s)`)
+              break outerLoop
+            }
+            
             const source = loadedAudioSources[trackIndex]
             const trackDuration = audioDurations[trackIndex]
             const delayFrames = audioDelay * fps
-            
-            // Stop creating clips if we've exceeded the total composition duration
-            if (audioDelay >= this.duration) {
-              break
-            }
             
             const clip = new core.AudioClip(source, {
               volume: audioVolume,
@@ -273,16 +275,19 @@ class VideoEditor {
             })
             
             audioClips.push(clip)
-            console.log(`🎵 Added audio clip ${cycle + 1}.${trackIndex + 1}: delay=${audioDelay}s, duration=${trackDuration}s`)
-            
+            clipsCreated++
             audioDelay += trackDuration
-          }
-          
-          // Break outer loop if we've exceeded duration
-          if (audioDelay >= this.duration) {
-            break
+            
+            // Safety check - prevent infinite loops
+            if (clipsCreated > 100) {
+              console.log(`🛑 Safety stop: created ${clipsCreated} audio clips`)
+              break outerLoop
+            }
           }
         }
+        
+        console.log(`✅ Created ${clipsCreated} total audio clips for looping`)
+        
         
       } else {
         // Original non-looping behavior
