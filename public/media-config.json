@@ -89,16 +89,19 @@
       }
     },
     "config": {
-      "backgroundMusicVolume": 0.1
+      "backgroundMusicVolume": 0.1,
+      "audioLoopEnabled": true
     },
     "tracks": [
       {
         "id": "audio_1",
-        "src": "https://pub-bc00aeb1aeab4b7480c2d94365bb62a9.r2.dev/future-design-344320.mp3"
+        "src": "https://pub-bc00aeb1aeab4b7480c2d94365bb62a9.r2.dev/future-design-344320.mp3",
+        "duration": 74
       },
       {
         "id": "audio_2",
-        "src": "https://pub-bc00aeb1aeab4b7480c2d94365bb62a9.r2.dev/embrace-364091.mp3"
+        "src": "https://pub-bc00aeb1aeab4b7480c2d94365bb62a9.r2.dev/embrace-364091.mp3",
+        "duration": 157
       }
     ],
     "playlist": [
