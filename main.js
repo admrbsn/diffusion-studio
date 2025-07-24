@@ -12,15 +12,14 @@ class VideoEditor {
     // Detect Safari iOS once and store it  
     console.log(`🔍 User Agent: ${navigator.userAgent}`)
     
-    // Improved iOS detection (distinguish between iOS and macOS)
-    const isActualIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
-                        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1 && 
-                         window.screen.width < 1200) // iPad Pro detection (but not desktop Macs)
+    // TEMPORARY: Hardcode iOS Safari logic for everyone to test
+    const isActualIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && /Mobile/.test(navigator.userAgent)
     const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome|CriOS|FxiOS|EdgiOS/.test(navigator.userAgent)
-    const isMacOS = /Macintosh/.test(navigator.userAgent) && !isActualIOS
+    const isMacOS = /Macintosh/.test(navigator.userAgent) && /Intel Mac OS X/.test(navigator.userAgent)
+    const isAndroid = /Android/.test(navigator.userAgent)
     
-    this.isSafariIOS = isActualIOS && isSafari
-    this.hasAutoplayRestrictions = isActualIOS || /Android/.test(navigator.userAgent) // Only actual mobile devices
+    this.isSafariIOS = true // HARDCODED for testing
+    this.hasAutoplayRestrictions = true // HARDCODED for testing
     
     console.log(`🔍 Browser detection: iOS = ${isActualIOS}, Safari = ${isSafari}, macOS = ${isMacOS}`)
     console.log(`🔍 Safari iOS = ${this.isSafariIOS}, Has autoplay restrictions = ${this.hasAutoplayRestrictions}`)
