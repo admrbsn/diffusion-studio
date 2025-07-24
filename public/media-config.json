@@ -3,10 +3,10 @@
     "media": {
       "1": {
         "type": "video",
-        "video": "/jim_mcgrew (720p).mp4"
+        "video": "https://pub-bc00aeb1aeab4b7480c2d94365bb62a9.r2.dev/jim_mcgrew (720p).mp4"
       },
       "2": {
-        "img": "https://images.pexels.com/photos/32440659/pexels-photo-32440659.jpeg",
+        "img": "https://pub-bc00aeb1aeab4b7480c2d94365bb62a9.r2.dev/pexels-diana-reyes-22788723l-32731474.jpg",
         "type": "img",
         "duration": 5
       },
@@ -16,77 +16,77 @@
       },
       "4": {
         "type": "video",
-        "video": "https://player.vimeo.com/progressive_redirect/playback/1098560016/rendition/720p/file.mp4?loc=external&signature=27531e28a53029453965f9a407132eb22d10e2325b9ffb7490ddf8dabc6a0212"
+        "video": "https://pub-bc00aeb1aeab4b7480c2d94365bb62a9.r2.dev/abbey_bradley (720p).mp4"
       },
       "5": {
         "type": "img",
-        "img": "https://images.pexels.com/photos/32319577/pexels-photo-32319577.jpeg",
+        "img": "https://pub-bc00aeb1aeab4b7480c2d94365bb62a9.r2.dev/pexels-i-rem-cevik-978247792-32480606.jpg",
         "duration": 5
       },
       "6": {
         "type": "video",
-        "video": "https://player.vimeo.com/progressive_redirect/playback/1097985179/rendition/360p/file.mp4?loc=external&signature=150d0529963afcd77ae282fdb2e4fe9be50f2699bceb2425a2a9e18beffb999a"
+        "video": "https://pub-bc00aeb1aeab4b7480c2d94365bb62a9.r2.dev/john_stuart_allen_goldsby (360p).mp4"
       },
       "7": {
         "type": "video",
-        "video": "https://player.vimeo.com/progressive_redirect/playback/1097975135/rendition/720p/file.mp4?loc=external&signature=476a309e6c362c820efbf506715be649cbb7908a8eba8a0ea8b763dd6f81d773"
+        "video": "https://pub-bc00aeb1aeab4b7480c2d94365bb62a9.r2.dev/bles (720p)(1).mp4"
       },
       "8": {
         "type": "img",
-        "img": "https://images.pexels.com/photos/30461581/pexels-photo-30461581.jpeg",
+        "img": "https://pub-bc00aeb1aeab4b7480c2d94365bb62a9.r2.dev/pexels-musaortac-28845727.jpg",
         "duration": 5
       },
       "9": {
         "type": "video",
-        "video": "https://player.vimeo.com/progressive_redirect/playback/1097505444/rendition/480p/file.mp4?loc=external&signature=fa8f46dda0c80fda5baafdbe3bce249a89441f1d30cc4bfd9729747122ffc906"
+        "video": "https://pub-bc00aeb1aeab4b7480c2d94365bb62a9.r2.dev/midda_garcia (480p).mp4"
       },
       "10": {
         "type": "video",
-        "video": "https://player.vimeo.com/progressive_redirect/playback/1097734932/rendition/1080p/file.mp4?loc=external&signature=42bc6ae3265fa7889f319728dbf6cc30937261c8f531094a6b64d87dcf17fd48"
+        "video": "https://pub-bc00aeb1aeab4b7480c2d94365bb62a9.r2.dev/13768551_1920_1080_60fps.mp4"
       },
       "11": {
         "type": "video",
-        "video": "https://player.vimeo.com/progressive_redirect/playback/1099707172/rendition/1080p/file.mp4?loc=external&signature=5591d37cfca0b99ed527fae7c4943ab1b06562ba9616ecb350f15002bb56be2e"
+        "video": "https://pub-bc00aeb1aeab4b7480c2d94365bb62a9.r2.dev/14065579_3840_2160_24fps.mp4"
       },
       "12": {
         "type": "video",
-        "video": "https://player.vimeo.com/progressive_redirect/playback/1097520999/rendition/720p/file.mp4?loc=external&signature=5690ae67a0eb8c2c3ace39d1b120affa0401c279c25b9d1848d6c30da38ba690"
+        "video": "https://pub-bc00aeb1aeab4b7480c2d94365bb62a9.r2.dev/emily_kollars (720p).mp4"
       },
       "13": {
         "type": "img",
-        "img": "https://images.pexels.com/photos/7559270/pexels-photo-7559270.jpeg",
+        "img": "https://pub-bc00aeb1aeab4b7480c2d94365bb62a9.r2.dev/pexels-noelace-32608050.jpg",
         "duration": 5
       },
       "14": {
         "type": "video",
-        "video": "https://player.vimeo.com/progressive_redirect/playback/1097724040/rendition/720p/file.mp4?loc=external&signature=e116a0d986d290ed41a8b5acd8fe59d4934511cfc0ca90d5b773970dda7ea0be"
+        "video": "https://pub-bc00aeb1aeab4b7480c2d94365bb62a9.r2.dev/emily_kollars (720p)(1).mp4"
       },
       "15": {
         "type": "video",
-        "video": "https://player.vimeo.com/progressive_redirect/playback/1097746682/rendition/360p/file.mp4?loc=external&signature=f2a903160e18d4bc3a107eed2ba0ba9b8e591b866ba880159e2ca4a09cd0fedb"
+        "video": "https://pub-bc00aeb1aeab4b7480c2d94365bb62a9.r2.dev/wade (360p).mp4"
       },
       "16": {
         "type": "img",
-        "img": "https://images.pexels.com/photos/31607802/pexels-photo-31607802.jpeg",
+        "img": "https://pub-bc00aeb1aeab4b7480c2d94365bb62a9.r2.dev/pexels-valentin-ilas-2154050328-33039009.jpg",
         "duration": 5
       },
       "17": {
         "type": "img",
-        "img": "https://images.pexels.com/photos/32742386/pexels-photo-32742386.jpeg",
+        "img": "https://pub-bc00aeb1aeab4b7480c2d94365bb62a9.r2.dev/pexels-yelenadintsoiva-31421611.jpg",
         "duration": 5
       },
       "18": {
         "type": "video",
-        "video": "https://player.vimeo.com/progressive_redirect/playback/1097759951/rendition/360p/file.mp4?loc=external&signature=3779ecd1db532b32413a5f93a4ac5f94e610c7cd88f609029c76d9377a82c0c4"
+        "video": "https://pub-bc00aeb1aeab4b7480c2d94365bb62a9.r2.dev/teresa_kageneck (540p).mp4"
       },
       "19": {
         "type": "img",
-        "img": "https://images.pexels.com/photos/32507242/pexels-photo-32507242.jpeg",
+        "img": "https://pub-bc00aeb1aeab4b7480c2d94365bb62a9.r2.dev/pexels-diana-reyes-22788723l-32731474.jpg",
         "duration": 5
       },
       "20": {
         "type": "video",
-        "video": "https://player.vimeo.com/progressive_redirect/playback/1097865863/rendition/720p/file.mp4?loc=external&signature=ed3e5242183dce115d27af353f5e95ea960e7b46a1af00cb0452ef083ad0799c"
+        "video": "https://pub-bc00aeb1aeab4b7480c2d94365bb62a9.r2.dev/sydney_einstein (720p).mp4"
       }
     },
     "config": {
