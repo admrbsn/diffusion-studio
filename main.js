@@ -9,12 +9,25 @@ class VideoEditor {
     this.currentTime = 0
     this.duration = 0 // Will be set from video source
     
-    // Detect Safari iOS once and store it
-    this.isSafariIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent)
-    console.log(`🔍 Browser detection: Safari iOS = ${this.isSafariIOS}`)
+    // Detect Safari iOS once and store it  
+    console.log(`🔍 User Agent: ${navigator.userAgent}`)
+    
+    // Improved Safari iOS detection
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+                  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) // iPad Pro detection
+    const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome|CriOS|FxiOS|EdgiOS/.test(navigator.userAgent)
+    
+    this.isSafariIOS = isIOS && isSafari
+    this.hasAutoplayRestrictions = isIOS || /Android/.test(navigator.userAgent) // Universal mobile detection
+    
+    console.log(`🔍 Browser detection: iOS = ${isIOS}, Safari = ${isSafari}`)
+    console.log(`🔍 Safari iOS = ${this.isSafariIOS}, Has autoplay restrictions = ${this.hasAutoplayRestrictions}`)
     
     // Track user-initiated play for Safari iOS
     this.userInitiatedPlay = false
+    
+    // Set up global error handler for autoplay issues
+    this.setupGlobalErrorHandler()
     
     // Show loading overlay
     this.showLoadingOverlay('Initializing...')
@@ -22,6 +35,17 @@ class VideoEditor {
     this.initializeComposition()
     this.setupControls()
     this.setupTimeline()
+  }
+
+  setupGlobalErrorHandler() {
+    // Handle unhandled promise rejections (like the NotAllowedError we're seeing)
+    window.addEventListener('unhandledrejection', (event) => {
+      if (event.reason && event.reason.name === 'NotAllowedError') {
+        console.log('🚫 Caught unhandled autoplay error, showing prompt')
+        event.preventDefault() // Prevent the error from appearing in console
+        this.showPlaybackPrompt()
+      }
+    })
   }
 
   showLoadingOverlay(status = 'Loading...') {
@@ -110,9 +134,9 @@ class VideoEditor {
       for (let i = 0; i < videoSources.length; i++) {
         this.updateLoadingStatus(`Loading videos ${i + 1}/${videoSources.length}...`)
         
-        // Use different loading strategy for Safari iOS
+        // Use different loading strategy for mobile devices
         const videoSource = await core.Source.from(videoSources[i], { 
-          prefetch: !this.isSafariIOS, // Disable prefetch on Safari iOS
+          prefetch: !this.hasAutoplayRestrictions, // Disable prefetch on mobile
           crossOrigin: 'anonymous' // Explicit CORS handling
         })
         loadedVideoSources.push(videoSource)
@@ -358,10 +382,10 @@ class VideoEditor {
       this.composition.mount(player)
       console.log('🖥️ Composition mounted to player')
       
-      // Handle Safari iOS autoplay restrictions BEFORE setting up events
-      if (this.isSafariIOS) {
-        console.log('🍎 Safari iOS detected - preventing autoplay')
-        // Don't auto-start playback on Safari iOS
+      // Handle mobile autoplay restrictions BEFORE setting up events
+      if (this.hasAutoplayRestrictions) {
+        console.log('📱 Mobile device detected - preventing autoplay')
+        // Don't auto-start playback on mobile devices
         try {
           this.composition.pause()
         } catch (error) {
@@ -398,9 +422,9 @@ class VideoEditor {
       this.isPlaying = true
       this.updatePlayPauseButtons()
       
-      // For Safari iOS, immediately pause if this was an unwanted autoplay
-      if (this.isSafariIOS && !this.userInitiatedPlay) {
-        console.log('🛑 Blocking unwanted autoplay on Safari iOS')
+      // For mobile devices, immediately pause if this was an unwanted autoplay
+      if (this.hasAutoplayRestrictions && !this.userInitiatedPlay) {
+        console.log('🛑 Blocking unwanted autoplay on mobile device')
         setTimeout(() => {
           this.composition.pause()
         }, 0)
@@ -459,8 +483,8 @@ class VideoEditor {
       } catch (error) {
         console.warn('🚫 Playback blocked by browser autoplay policy:', error.message)
         
-        // Show user interaction prompt for Safari iOS
-        if (error.name === 'NotAllowedError') {
+        // Show user interaction prompt for any autoplay error
+        if (error.name === 'NotAllowedError' || error.message.includes('autoplay')) {
           this.showPlaybackPrompt()
         }
       }
