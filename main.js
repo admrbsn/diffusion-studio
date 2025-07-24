@@ -38,12 +38,12 @@ class VideoEditor {
   }
 
   setupGlobalErrorHandler() {
-    // Handle unhandled promise rejections (like the NotAllowedError we're seeing)
+    // Handle unhandled promise rejections silently for mobile autoplay issues
     window.addEventListener('unhandledrejection', (event) => {
       if (event.reason && event.reason.name === 'NotAllowedError') {
-        console.log('🚫 Caught unhandled autoplay error, showing prompt')
+        console.log('🚫 Suppressing autoplay error during playback')
         event.preventDefault() // Prevent the error from appearing in console
-        this.showPlaybackPrompt()
+        // Don't show prompt during playback - just suppress the error
       }
     })
   }
@@ -406,6 +406,12 @@ class VideoEditor {
       // Hide loading overlay - composition is ready!
       this.hideLoadingOverlay()
       
+      // Show initial play prompt for mobile devices
+      if (this.hasAutoplayRestrictions) {
+        console.log('📱 Showing initial play prompt for mobile device')
+        this.showPlaybackPrompt()
+      }
+      
     } catch (error) {
       console.error('❌ Error initializing composition:', error)
       console.error('Error details:', error.stack)
@@ -422,9 +428,9 @@ class VideoEditor {
       this.isPlaying = true
       this.updatePlayPauseButtons()
       
-      // For mobile devices, immediately pause if this was an unwanted autoplay
+      // Only block initial autoplay, not user-initiated playback
       if (this.hasAutoplayRestrictions && !this.userInitiatedPlay) {
-        console.log('🛑 Blocking unwanted autoplay on mobile device')
+        console.log('🛑 Blocking initial autoplay on mobile device')
         setTimeout(() => {
           this.composition.pause()
         }, 0)
@@ -483,8 +489,9 @@ class VideoEditor {
       } catch (error) {
         console.warn('🚫 Playback blocked by browser autoplay policy:', error.message)
         
-        // Show user interaction prompt for any autoplay error
-        if (error.name === 'NotAllowedError' || error.message.includes('autoplay')) {
+        // Only show prompt if we haven't already shown it and this is the initial play
+        if ((error.name === 'NotAllowedError' || error.message.includes('autoplay')) && 
+            !document.getElementById('autoplay-overlay')) {
           this.showPlaybackPrompt()
         }
       }
@@ -492,6 +499,12 @@ class VideoEditor {
   }
 
   showPlaybackPrompt() {
+    // Remove any existing overlay first
+    const existingOverlay = document.getElementById('autoplay-overlay')
+    if (existingOverlay) {
+      existingOverlay.remove()
+    }
+    
     // Create overlay for user interaction
     const overlay = document.createElement('div')
     overlay.id = 'autoplay-overlay'
@@ -521,8 +534,8 @@ class VideoEditor {
     `
     
     content.innerHTML = `
-      <h2 style="color: white; margin-bottom: 16px;">🎬 Ready to Play</h2>
-      <p style="color: #ccc; margin-bottom: 24px;">Tap to start the tribute video</p>
+      <h2 style="color: white; margin-bottom: 16px;">🎬 Tribute Ready</h2>
+      <p style="color: #ccc; margin-bottom: 24px;">Tap to start the video tribute</p>
       <button id="start-playback" style="
         background: #646cff;
         color: white;
@@ -531,7 +544,7 @@ class VideoEditor {
         border-radius: 6px;
         font-size: 16px;
         cursor: pointer;
-      ">▶️ Start Video</button>
+      ">▶️ Start Tribute</button>
     `
     
     overlay.appendChild(content)
