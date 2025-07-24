@@ -358,6 +358,13 @@ class VideoEditor {
       this.updateLoadingStatus('Setting up player controls...')
       this.setupCompositionEvents()
       
+      // Handle Safari iOS autoplay restrictions
+      if (isSafariIOS) {
+        console.log('🍎 Safari iOS detected - preventing autoplay')
+        // Don't auto-start playback on Safari iOS
+        this.composition.pause()
+      }
+      
       // Update UI with new duration
       this.updateTimeDisplay()
       this.updateTimeline()
@@ -425,10 +432,79 @@ class VideoEditor {
     })
   }
 
-  play() {
+  async play() {
     if (this.composition && !this.isPlaying) {
-      this.composition.play()
+      try {
+        await this.composition.play()
+      } catch (error) {
+        console.warn('🚫 Playback blocked by browser autoplay policy:', error.message)
+        
+        // Show user interaction prompt for Safari iOS
+        if (error.name === 'NotAllowedError') {
+          this.showPlaybackPrompt()
+        }
+      }
     }
+  }
+
+  showPlaybackPrompt() {
+    // Create overlay for user interaction
+    const overlay = document.createElement('div')
+    overlay.id = 'autoplay-overlay'
+    overlay.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(26, 26, 26, 0.95);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+      backdrop-filter: blur(8px);
+    `
+    
+    const content = document.createElement('div')
+    content.style.cssText = `
+      text-align: center;
+      padding: 40px;
+      background: rgba(42, 42, 42, 0.9);
+      border-radius: 12px;
+      border: 1px solid #404040;
+      max-width: 400px;
+      margin: 0 20px;
+    `
+    
+    content.innerHTML = `
+      <h2 style="color: white; margin-bottom: 16px;">🎬 Ready to Play</h2>
+      <p style="color: #ccc; margin-bottom: 24px;">Tap to start the tribute video</p>
+      <button id="start-playback" style="
+        background: #646cff;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 6px;
+        font-size: 16px;
+        cursor: pointer;
+      ">▶️ Start Video</button>
+    `
+    
+    overlay.appendChild(content)
+    document.body.appendChild(overlay)
+    
+    // Handle user interaction
+    const startButton = content.querySelector('#start-playback')
+    startButton.addEventListener('click', async () => {
+      try {
+        await this.composition.play()
+        overlay.remove()
+      } catch (error) {
+        console.error('Failed to start playback:', error)
+        startButton.textContent = 'Playback Error'
+        startButton.style.background = '#ef4444'
+      }
+    })
   }
 
   pause() {
