@@ -71,9 +71,8 @@
         "duration": 5
       },
       "17": {
-        "type": "img",
-        "img": "https://pub-bc00aeb1aeab4b7480c2d94365bb62a9.r2.dev/pexels-yelenadintsoiva-31421611.jpg",
-        "duration": 5
+        "type": "video",
+        "img": "https://pub-bc00aeb1aeab4b7480c2d94365bb62a9.r2.dev/14169131-uhd_3840_2160_30fps.mp4"
       },
       "18": {
         "type": "video",
