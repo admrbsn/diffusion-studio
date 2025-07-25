@@ -51,9 +51,21 @@ class VideoEditor {
       console.log('🎬 Starting composition initialization...')
       this.updateLoadingStatus('Creating composition...')
       
-      // Create composition
-      this.composition = new core.Composition()
-      console.log('✅ Composition created')
+      // Create composition with WebGL2 backend attempt
+      try {
+        this.composition = new core.Composition({ backend: 'webgl' })
+        console.log('✅ Composition created with WebGL2 backend')
+      } catch (error) {
+        console.log('⚠️ WebGL2 backend failed, trying webgl2...')
+        try {
+          this.composition = new core.Composition({ backend: 'webgl2' })
+          console.log('✅ Composition created with webgl2 backend')
+        } catch (error2) {
+          console.log('⚠️ WebGL backends failed, falling back to default...')
+          this.composition = new core.Composition()
+          console.log('✅ Composition created with default backend')
+        }
+      }
 
       // Load media configuration from JSON file
       console.log('📄 Loading media configuration...')
