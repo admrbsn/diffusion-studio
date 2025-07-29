@@ -222,6 +222,10 @@ class VideoEditor {
       const imageLayers = []
       let imageIndex = 0
       
+      // Create blank video clips for Safari compatibility (separate layers)
+      const blankVideoClips = []
+      const blankVideoLayers = []
+      
       // Process each media item in sequence
       for (let i = 0; i < mediaSequence.length; i++) {
         const mediaItem = mediaSequence[i]
@@ -243,16 +247,17 @@ class VideoEditor {
           
         } else if (mediaItem.type === 'image') {
           const source = loadedImageSources[mediaItem.sourceIndex]
-          const layer = this.composition.createLayer()
+          const imageLayer = this.composition.createLayer()
           
-          const clip = new core.ImageClip(source, {
+          const imageClip = new core.ImageClip(source, {
             height: '100%',
             position: 'center',
             delay: delayFrames + 'f',
             duration: mediaItem.duration + 's'
           })
           
-          // Add blank video clip to maintain Safari interaction context
+          // Create separate layer for blank video clip (Safari compatibility)
+          const blankVideoLayer = this.composition.createLayer()
           const blankVideoClip = new core.VideoClip(blankVideoSource, {
             height: '100%',
             position: 'center',
@@ -261,13 +266,11 @@ class VideoEditor {
             volume: 0   // Mute the blank video
           }).subclip(0, mediaItem.duration * fps)
           
-          imageClips.push(clip)
-          imageLayers.push(layer)
+          imageClips.push(imageClip)
+          imageLayers.push(imageLayer)
+          blankVideoClips.push(blankVideoClip)
+          blankVideoLayers.push(blankVideoLayer)
           imageIndex++
-          
-          // Store blank video clip for adding to layer later
-          if (!this.blankVideoClips) this.blankVideoClips = []
-          this.blankVideoClips.push(blankVideoClip)
         }
         
         currentDelay += mediaItem.duration
@@ -359,7 +362,11 @@ class VideoEditor {
       for (let i = 0; i < imageLayers.length; i++) {
         imageLayers[i].index(videoLayers.length + i)
       }
-      audioLayer.index(videoLayers.length + imageLayers.length)
+      // Add blank video layers after image layers
+      for (let i = 0; i < blankVideoLayers.length; i++) {
+        blankVideoLayers[i].index(videoLayers.length + imageLayers.length + i)
+      }
+      audioLayer.index(videoLayers.length + imageLayers.length + blankVideoLayers.length)
 
       // Add all clips to their respective layers
       for (let i = 0; i < videoClips.length; i++) {
@@ -368,17 +375,18 @@ class VideoEditor {
       
       for (let i = 0; i < imageClips.length; i++) {
         await imageLayers[i].add(imageClips[i])
-        // Also add blank video clip to maintain Safari interaction context
-        if (this.blankVideoClips && this.blankVideoClips[i]) {
-          await imageLayers[i].add(this.blankVideoClips[i])
-        }
+      }
+      
+      // Add blank video clips to their own layers
+      for (let i = 0; i < blankVideoClips.length; i++) {
+        await blankVideoLayers[i].add(blankVideoClips[i])
       }
       
       for (let i = 0; i < audioClips.length; i++) {
         await audioLayer.add(audioClips[i])
       }
       
-      console.log(`✅ Composition assembled: ${videoClips.length} videos, ${imageClips.length} images (with ${this.blankVideoClips?.length || 0} blank videos), ${audioClips.length} audio tracks`)
+      console.log(`✅ Composition assembled: ${videoClips.length} videos, ${imageClips.length} images, ${blankVideoClips.length} blank videos (Safari compatibility), ${audioClips.length} audio tracks`)
       
       // Mount composition to player (like working example)
       this.updateLoadingStatus('Mounting composition to player...')
