@@ -102,20 +102,10 @@ class VideoEditor {
       // Audio sources from tracks (in order)
       const audioSources = mediaConfig.tracks.map(track => track.src)
       
-      // Add blank video for Safari mobile compatibility (maintains interaction context)
-      const blankVideoUrl = 'https://pub-bc00aeb1aeab4b7480c2d94365bb62a9.r2.dev/blank.mp4'
-      
       console.log('📋 Processed sources:')
       console.log(`  Videos: ${videoSources.length}`, videoSources)
       console.log(`  Images: ${imageSources.length}`, imageSources)
       console.log(`  Audio: ${audioSources.length}`, audioSources)
-      console.log(`  Blank video: ${blankVideoUrl}`)
-      
-      // Load blank video source for Safari compatibility
-      console.log('📺 Loading blank video for Safari compatibility...')
-      this.updateLoadingStatus('Loading blank video for Safari...')
-      const blankVideoSource = await core.Source.from(blankVideoUrl, { prefetch: true })
-      console.log('✅ Blank video source loaded')
       
       // Load all video sources
       console.log('📂 Loading video sources...')
@@ -222,10 +212,6 @@ class VideoEditor {
       const imageLayers = []
       let imageIndex = 0
       
-      // Create blank video clips for Safari compatibility (separate layers)
-      const blankVideoClips = []
-      const blankVideoLayers = []
-      
       // Process each media item in sequence
       for (let i = 0; i < mediaSequence.length; i++) {
         const mediaItem = mediaSequence[i]
@@ -247,29 +233,17 @@ class VideoEditor {
           
         } else if (mediaItem.type === 'image') {
           const source = loadedImageSources[mediaItem.sourceIndex]
-          const imageLayer = this.composition.createLayer()
+          const layer = this.composition.createLayer()
           
-          const imageClip = new core.ImageClip(source, {
+          const clip = new core.ImageClip(source, {
             height: '100%',
             position: 'center',
             delay: delayFrames + 'f',
             duration: mediaItem.duration + 's'
           })
           
-          // Create separate layer for blank video clip (Safari compatibility)
-          const blankVideoLayer = this.composition.createLayer()
-          const blankVideoClip = new core.VideoClip(blankVideoSource, {
-            height: '100%',
-            position: 'center',
-            delay: delayFrames + 'f',
-            opacity: 0, // Make invisible but keep playing
-            volume: 0   // Mute the blank video
-          }).subclip(0, mediaItem.duration * fps)
-          
-          imageClips.push(imageClip)
-          imageLayers.push(imageLayer)
-          blankVideoClips.push(blankVideoClip)
-          blankVideoLayers.push(blankVideoLayer)
+          imageClips.push(clip)
+          imageLayers.push(layer)
           imageIndex++
         }
         
@@ -362,11 +336,7 @@ class VideoEditor {
       for (let i = 0; i < imageLayers.length; i++) {
         imageLayers[i].index(videoLayers.length + i)
       }
-      // Add blank video layers after image layers
-      for (let i = 0; i < blankVideoLayers.length; i++) {
-        blankVideoLayers[i].index(videoLayers.length + imageLayers.length + i)
-      }
-      audioLayer.index(videoLayers.length + imageLayers.length + blankVideoLayers.length)
+      audioLayer.index(videoLayers.length + imageLayers.length)
 
       // Add all clips to their respective layers
       for (let i = 0; i < videoClips.length; i++) {
@@ -377,16 +347,11 @@ class VideoEditor {
         await imageLayers[i].add(imageClips[i])
       }
       
-      // Add blank video clips to their own layers
-      for (let i = 0; i < blankVideoClips.length; i++) {
-        await blankVideoLayers[i].add(blankVideoClips[i])
-      }
-      
       for (let i = 0; i < audioClips.length; i++) {
         await audioLayer.add(audioClips[i])
       }
       
-      console.log(`✅ Composition assembled: ${videoClips.length} videos, ${imageClips.length} images, ${blankVideoClips.length} blank videos (Safari compatibility), ${audioClips.length} audio tracks`)
+      console.log(`✅ Composition assembled: ${videoClips.length} videos, ${imageClips.length} images, ${audioClips.length} audio tracks`)
       
       // Mount composition to player (like working example)
       this.updateLoadingStatus('Mounting composition to player...')
