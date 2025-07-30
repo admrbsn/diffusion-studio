@@ -143,7 +143,16 @@ class VideoEditor {
       console.log(`✅ ${loadedAudioSources.length} audio sources loaded`)
       
       // Calculate total duration dynamically from all loaded sources
-      const videoDurations = loadedVideoSources.map(source => source.duration?.seconds ?? 10)
+      const videoDurations = loadedVideoSources.map((source, index) => {
+        const duration = source.duration?.seconds
+        const isValid = duration && isFinite(duration) && duration > 0
+        
+        if (!isValid) {
+          console.log(`⚠️ Video ${index + 1} has invalid duration (${duration}), using fallback of 10s`)
+        }
+        
+        return isValid ? duration : 10
+      })
       
       // Get image durations from JSON config (now using integers)
       const imageDurations = []
