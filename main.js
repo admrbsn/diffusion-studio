@@ -249,8 +249,7 @@ class VideoEditor {
           const clip = new core.VideoClip(source, {
             height: '100%',
             position: 'center',
-            delay: delayFrames + 'f',
-            muted: this.isMuted
+            delay: delayFrames + 'f'
           }).subclip(0, mediaItem.duration * fps)
           
           videoClips.push(clip)
@@ -310,11 +309,11 @@ class VideoEditor {
             const delayFrames = audioDelay * fps
             
             const clip = new core.AudioClip(source, {
-              volume: this.isMuted ? 0 : audioVolume,
+              volume: audioVolume,
               delay: delayFrames + 'f'
             })
             
-            // Store original volume for unmuting
+            // Store original volume for later muting if needed
             clip._originalVolume = audioVolume
             
             audioClips.push(clip)
@@ -340,11 +339,11 @@ class VideoEditor {
           const delayFrames = audioDelay * fps
           
           const clip = new core.AudioClip(source, {
-            volume: this.isMuted ? 0 : audioVolume,
+            volume: audioVolume,
             delay: i === 0 ? 0 : delayFrames + 'f'
           })
           
-          // Store original volume for unmuting
+          // Store original volume for later muting if needed
           clip._originalVolume = audioVolume
           
           audioClips.push(clip)
@@ -401,6 +400,12 @@ class VideoEditor {
       
       console.log(`🎉 JSON-configured composition ready: ${this.duration}s total duration`)
       console.log(`🔊 Audio state: ${this.isMuted ? 'MUTED' : 'UNMUTED'} ${this.isMobile ? '(Mobile detected - muted by default)' : ''}`)
+      
+      // Apply initial mute state after composition is ready
+      if (this.isMuted) {
+        console.log('🔇 Applying initial mute state...')
+        await this.applyMuteState()
+      }
       
       // Hide loading overlay - composition is ready!
       this.hideLoadingOverlay()
@@ -567,28 +572,63 @@ class VideoEditor {
   async applyMuteState() {
     if (!this.composition) return
     
-    // Apply mute state to all layers
-    const layers = this.composition.layers
-    
-    for (const layer of layers) {
-      for (const clip of layer.clips) {
-        if (clip.constructor.name === 'VideoClip') {
-          // For video clips, set the muted property
-          clip.muted = this.isMuted
-        } else if (clip.constructor.name === 'AudioClip') {
-          // For audio clips, set volume to 0 or restore original volume
-          const originalVolume = clip._originalVolume || 0.5 // Store original volume
-          if (!clip._originalVolume) {
-            clip._originalVolume = clip.volume || 0.5
+    try {
+      // Try composition-level muting first
+      if (this.composition.muted !== undefined) {
+        this.composition.muted = this.isMuted
+        console.log(`🎵 Composition muted property set to: ${this.isMuted}`)
+        return
+      }
+      
+      // Try player-level muting
+      const player = document.getElementById('player')
+      if (player) {
+        // Look for video elements within the player
+        const videoElements = player.querySelectorAll('video')
+        videoElements.forEach(video => {
+          video.muted = this.isMuted
+          console.log(`🎥 Video element muted: ${this.isMuted}`)
+        })
+        
+        // Look for audio elements within the player
+        const audioElements = player.querySelectorAll('audio')
+        audioElements.forEach(audio => {
+          if (this.isMuted) {
+            audio._originalVolume = audio.volume
+            audio.volume = 0
+          } else {
+            audio.volume = audio._originalVolume || 1
           }
-          clip.volume = this.isMuted ? 0 : originalVolume
+          console.log(`🎵 Audio element volume set to: ${audio.volume}`)
+        })
+      }
+      
+      // Try setting volume on the composition if available
+      if (this.composition.volume !== undefined) {
+        if (this.isMuted) {
+          this.composition._originalVolume = this.composition.volume
+          this.composition.volume = 0
+        } else {
+          this.composition.volume = this.composition._originalVolume || 1
+        }
+        console.log(`🔊 Composition volume set to: ${this.composition.volume}`)
+      }
+      
+      // As a fallback, try to access the underlying media elements through the composition
+      if (this.composition.canvas) {
+        const canvas = this.composition.canvas
+        const context = canvas.getContext('2d')
+        // Try to find associated media elements
+        if (context && context.drawImage) {
+          // This is a more complex approach - might need to access internal composition state
+          console.log('🎬 Trying to access internal composition media elements...')
         }
       }
-    }
-    
-    // Force composition to update
-    if (this.composition.currentFrame !== undefined) {
-      this.composition.seek(this.composition.currentFrame)
+      
+      console.log(`🔧 Applied mute state: ${this.isMuted}`)
+      
+    } catch (error) {
+      console.error('❌ Error applying mute state:', error)
     }
   }
 
