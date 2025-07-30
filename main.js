@@ -9,6 +9,12 @@ class VideoEditor {
     this.currentTime = 0
     this.duration = 0 // Will be set from video source
     
+    // Detect mobile and set muted state
+    this.isMobile = this.detectMobile()
+    this.isMuted = this.isMobile // Mute by default on mobile
+    
+    console.log(`📱 Mobile detected: ${this.isMobile}, Starting muted: ${this.isMuted}`)
+    
     // Show loading overlay
     this.showLoadingOverlay('Initializing...')
     
@@ -44,6 +50,16 @@ class VideoEditor {
     if (statusElement) {
       statusElement.textContent = status
     }
+  }
+
+  detectMobile() {
+    // Detect mobile devices
+    const userAgent = navigator.userAgent.toLowerCase()
+    const isMobileUA = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/.test(userAgent)
+    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0
+    const isSmallScreen = window.innerWidth <= 768
+    
+    return isMobileUA || (isTouchDevice && isSmallScreen)
   }
 
   async initializeComposition() {
@@ -233,7 +249,8 @@ class VideoEditor {
           const clip = new core.VideoClip(source, {
             height: '100%',
             position: 'center',
-            delay: delayFrames + 'f'
+            delay: delayFrames + 'f',
+            muted: this.isMuted
           }).subclip(0, mediaItem.duration * fps)
           
           videoClips.push(clip)
@@ -293,9 +310,12 @@ class VideoEditor {
             const delayFrames = audioDelay * fps
             
             const clip = new core.AudioClip(source, {
-              volume: audioVolume,
+              volume: this.isMuted ? 0 : audioVolume,
               delay: delayFrames + 'f'
             })
+            
+            // Store original volume for unmuting
+            clip._originalVolume = audioVolume
             
             audioClips.push(clip)
             clipsCreated++
@@ -320,9 +340,12 @@ class VideoEditor {
           const delayFrames = audioDelay * fps
           
           const clip = new core.AudioClip(source, {
-            volume: audioVolume,
+            volume: this.isMuted ? 0 : audioVolume,
             delay: i === 0 ? 0 : delayFrames + 'f'
           })
+          
+          // Store original volume for unmuting
+          clip._originalVolume = audioVolume
           
           audioClips.push(clip)
           
@@ -377,6 +400,7 @@ class VideoEditor {
       this.updateTimeline()
       
       console.log(`🎉 JSON-configured composition ready: ${this.duration}s total duration`)
+      console.log(`🔊 Audio state: ${this.isMuted ? 'MUTED' : 'UNMUTED'} ${this.isMobile ? '(Mobile detected - muted by default)' : ''}`)
       
       // Hide loading overlay - composition is ready!
       this.hideLoadingOverlay()
@@ -420,13 +444,20 @@ class VideoEditor {
     const pauseBtn = document.querySelector('[data-lucide="pause"]')
     const skipBackBtn = document.querySelector('[data-lucide="skip-back"]')
     const skipForwardBtn = document.querySelector('[data-lucide="skip-forward"]')
+    const muteBtn = document.getElementById('mute-btn')
+    const unmuteBtn = document.getElementById('unmute-btn')
     const exportBtn = document.getElementById('export')
 
     playBtn.addEventListener('click', () => this.play())
     pauseBtn.addEventListener('click', () => this.pause())
     skipBackBtn.addEventListener('click', () => this.skipBack())
     skipForwardBtn.addEventListener('click', () => this.skipForward())
+    muteBtn.addEventListener('click', () => this.mute())
+    unmuteBtn.addEventListener('click', () => this.unmute())
     exportBtn.addEventListener('click', () => this.export())
+    
+    // Set initial mute button state
+    this.updateMuteButtons()
   }
 
   setupTimeline() {
@@ -500,6 +531,65 @@ class VideoEditor {
     const mins = Math.floor(seconds / 60)
     const secs = Math.floor(seconds % 60)
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+  }
+
+  mute() {
+    if (!this.isMuted) {
+      this.isMuted = true
+      this.applyMuteState()
+      this.updateMuteButtons()
+      console.log('🔇 Audio muted')
+    }
+  }
+
+  unmute() {
+    if (this.isMuted) {
+      this.isMuted = false
+      this.applyMuteState()
+      this.updateMuteButtons()
+      console.log('🔊 Audio unmuted')
+    }
+  }
+
+  updateMuteButtons() {
+    const muteBtn = document.getElementById('mute-btn')
+    const unmuteBtn = document.getElementById('unmute-btn')
+    
+    if (this.isMuted) {
+      muteBtn.style.display = 'none'
+      unmuteBtn.style.display = 'block'
+    } else {
+      unmuteBtn.style.display = 'none'
+      muteBtn.style.display = 'block'
+    }
+  }
+
+  async applyMuteState() {
+    if (!this.composition) return
+    
+    // Apply mute state to all layers
+    const layers = this.composition.layers
+    
+    for (const layer of layers) {
+      for (const clip of layer.clips) {
+        if (clip.constructor.name === 'VideoClip') {
+          // For video clips, set the muted property
+          clip.muted = this.isMuted
+        } else if (clip.constructor.name === 'AudioClip') {
+          // For audio clips, set volume to 0 or restore original volume
+          const originalVolume = clip._originalVolume || 0.5 // Store original volume
+          if (!clip._originalVolume) {
+            clip._originalVolume = clip.volume || 0.5
+          }
+          clip.volume = this.isMuted ? 0 : originalVolume
+        }
+      }
+    }
+    
+    // Force composition to update
+    if (this.composition.currentFrame !== undefined) {
+      this.composition.seek(this.composition.currentFrame)
+    }
   }
 
   async export() {
