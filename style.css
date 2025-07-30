@@ -118,20 +118,6 @@ body {
   color: #646cff;
 }
 
-#mute-btn, #unmute-btn {
-  margin-left: 10px;
-  padding-left: 10px;
-  border-left: 1px solid #404040;
-}
-
-#unmute-btn {
-  color: #ff6b6b !important;
-}
-
-#unmute-btn:hover {
-  color: #ff5252 !important;
-}
-
 #time {
   font-family: 'Courier New', monospace;
   font-size: 14px;

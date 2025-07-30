@@ -9,12 +9,6 @@ class VideoEditor {
     this.currentTime = 0
     this.duration = 0 // Will be set from video source
     
-    // Detect mobile and set muted state
-    this.isMobile = this.detectMobile()
-    this.isMuted = this.isMobile // Mute by default on mobile
-    
-    console.log(`📱 Mobile detected: ${this.isMobile}, Starting muted: ${this.isMuted}`)
-    
     // Show loading overlay
     this.showLoadingOverlay('Initializing...')
     
@@ -50,16 +44,6 @@ class VideoEditor {
     if (statusElement) {
       statusElement.textContent = status
     }
-  }
-
-  detectMobile() {
-    // Detect mobile devices
-    const userAgent = navigator.userAgent.toLowerCase()
-    const isMobileUA = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/.test(userAgent)
-    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0
-    const isSmallScreen = window.innerWidth <= 768
-    
-    return isMobileUA || (isTouchDevice && isSmallScreen)
   }
 
   async initializeComposition() {
@@ -313,9 +297,6 @@ class VideoEditor {
               delay: delayFrames + 'f'
             })
             
-            // Store original volume for later muting if needed
-            clip._originalVolume = audioVolume
-            
             audioClips.push(clip)
             clipsCreated++
             audioDelay += trackDuration
@@ -342,9 +323,6 @@ class VideoEditor {
             volume: audioVolume,
             delay: i === 0 ? 0 : delayFrames + 'f'
           })
-          
-          // Store original volume for later muting if needed
-          clip._originalVolume = audioVolume
           
           audioClips.push(clip)
           
@@ -399,13 +377,6 @@ class VideoEditor {
       this.updateTimeline()
       
       console.log(`🎉 JSON-configured composition ready: ${this.duration}s total duration`)
-      console.log(`🔊 Audio state: ${this.isMuted ? 'MUTED' : 'UNMUTED'} ${this.isMobile ? '(Mobile detected - muted by default)' : ''}`)
-      
-      // Apply initial mute state after composition is ready
-      if (this.isMuted) {
-        console.log('🔇 Applying initial mute state...')
-        await this.applyMuteState()
-      }
       
       // Hide loading overlay - composition is ready!
       this.hideLoadingOverlay()
@@ -449,20 +420,13 @@ class VideoEditor {
     const pauseBtn = document.querySelector('[data-lucide="pause"]')
     const skipBackBtn = document.querySelector('[data-lucide="skip-back"]')
     const skipForwardBtn = document.querySelector('[data-lucide="skip-forward"]')
-    const muteBtn = document.getElementById('mute-btn')
-    const unmuteBtn = document.getElementById('unmute-btn')
     const exportBtn = document.getElementById('export')
 
     playBtn.addEventListener('click', () => this.play())
     pauseBtn.addEventListener('click', () => this.pause())
     skipBackBtn.addEventListener('click', () => this.skipBack())
     skipForwardBtn.addEventListener('click', () => this.skipForward())
-    muteBtn.addEventListener('click', () => this.mute())
-    unmuteBtn.addEventListener('click', () => this.unmute())
     exportBtn.addEventListener('click', () => this.export())
-    
-    // Set initial mute button state
-    this.updateMuteButtons()
   }
 
   setupTimeline() {
@@ -536,100 +500,6 @@ class VideoEditor {
     const mins = Math.floor(seconds / 60)
     const secs = Math.floor(seconds % 60)
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
-  }
-
-  mute() {
-    if (!this.isMuted) {
-      this.isMuted = true
-      this.applyMuteState()
-      this.updateMuteButtons()
-      console.log('🔇 Audio muted')
-    }
-  }
-
-  unmute() {
-    if (this.isMuted) {
-      this.isMuted = false
-      this.applyMuteState()
-      this.updateMuteButtons()
-      console.log('🔊 Audio unmuted')
-    }
-  }
-
-  updateMuteButtons() {
-    const muteBtn = document.getElementById('mute-btn')
-    const unmuteBtn = document.getElementById('unmute-btn')
-    
-    if (this.isMuted) {
-      muteBtn.style.display = 'none'
-      unmuteBtn.style.display = 'block'
-    } else {
-      unmuteBtn.style.display = 'none'
-      muteBtn.style.display = 'block'
-    }
-  }
-
-  async applyMuteState() {
-    if (!this.composition) return
-    
-    try {
-      // Try composition-level muting first
-      if (this.composition.muted !== undefined) {
-        this.composition.muted = this.isMuted
-        console.log(`🎵 Composition muted property set to: ${this.isMuted}`)
-        return
-      }
-      
-      // Try player-level muting
-      const player = document.getElementById('player')
-      if (player) {
-        // Look for video elements within the player
-        const videoElements = player.querySelectorAll('video')
-        videoElements.forEach(video => {
-          video.muted = this.isMuted
-          console.log(`🎥 Video element muted: ${this.isMuted}`)
-        })
-        
-        // Look for audio elements within the player
-        const audioElements = player.querySelectorAll('audio')
-        audioElements.forEach(audio => {
-          if (this.isMuted) {
-            audio._originalVolume = audio.volume
-            audio.volume = 0
-          } else {
-            audio.volume = audio._originalVolume || 1
-          }
-          console.log(`🎵 Audio element volume set to: ${audio.volume}`)
-        })
-      }
-      
-      // Try setting volume on the composition if available
-      if (this.composition.volume !== undefined) {
-        if (this.isMuted) {
-          this.composition._originalVolume = this.composition.volume
-          this.composition.volume = 0
-        } else {
-          this.composition.volume = this.composition._originalVolume || 1
-        }
-        console.log(`🔊 Composition volume set to: ${this.composition.volume}`)
-      }
-      
-      // As a fallback, try to access the underlying media elements through the composition
-      if (this.composition.canvas) {
-        const canvas = this.composition.canvas
-        const context = canvas.getContext('2d')
-        // Try to find associated media elements
-        if (context && context.drawImage) {
-          // This is a more complex approach - might need to access internal composition state
-          console.log('🎬 Trying to access internal composition media elements...')
-        }
-      }
-      
-      console.log(`🔧 Applied mute state: ${this.isMuted}`)
-      
-    } catch (error) {
-      console.error('❌ Error applying mute state:', error)
-    }
   }
 
   async export() {
